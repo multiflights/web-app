@@ -39,12 +39,12 @@ export default function App() {
   const handleSearch = async () => {
     const departureDates = getDatesInRange(dates.start, dates.end);
     const MAX_CALLS = 20;
-const estimatedCalls = origins.length * destinations.length * departureDates.length;
+    const estimatedCalls = origins.length * destinations.length * departureDates.length;
 
-if (estimatedCalls > MAX_CALLS) {
-  setStatus(`❌ Too many requests: ${estimatedCalls} routes. Limit is ${MAX_CALLS}. Reduce airports or date range.`);
-  return;
-}
+    if (estimatedCalls > MAX_CALLS) {
+        setStatus(`❌ Too many requests: ${estimatedCalls} routes. Limit is ${MAX_CALLS}. Reduce airports or date range.`);
+        return;
+    }
     if (origins.length === 0 || destinations.length === 0) {
       setStatus("❌ Please add at least one departure and arrival airport.");
       return;
