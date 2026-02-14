@@ -38,9 +38,11 @@ export default function App() {
    */
   const handleSearch = async () => {
     const departureDates = getDatesInRange(dates.start, dates.end);
+
+
     const MAX_CALLS = 20;
     const estimatedCalls = origins.length * destinations.length * departureDates.length;
-
+    console.log("estimatedCalls", estimatedCalls, {origins, destinations, departureDates});
     if (estimatedCalls > MAX_CALLS) {
         setStatus(`❌ Too many requests: ${estimatedCalls} routes. Limit is ${MAX_CALLS}. Reduce airports or date range.`);
         return;
