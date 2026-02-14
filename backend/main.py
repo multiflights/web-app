@@ -164,11 +164,15 @@ def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRou
 
     for offer in amadeus_offers:
         itin = offer["itineraries"][0]
-        dur_iso = itin.get("duration")
-        if not dur_iso: 
-            continue
-        duration_minutes = iso_duration_to_minutes(dur_iso)
+        dur_iso = 100
+if not dur_iso:
+    continue
 
+try:
+    duration_minutes = iso_duration_to_minutes(dur_iso)
+except Exception as e:
+    print(f"Bad duration '{dur_iso}': {e}")
+    continue
         segs = itin["segments"]
 
         segments = [
