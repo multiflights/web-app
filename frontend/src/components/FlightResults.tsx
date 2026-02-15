@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { FlightSearchResult, FlightSearchResultByCombination } from '../types/flight-search-result';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plane } from 'lucide-react';
 
 /**
  * Helper to calculate the duration between two ISO strings
@@ -22,14 +22,29 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
   const last = flight.segments[flight.segments.length - 1];
   const stopCount = flight.segments.length - 1;
 
+  const [imgError, setImgError] = useState(false);
+  const airlineLogoUrl = `https://storage.googleapis.com/multiflights-airline-logos/${flight.airline.toUpperCase()}.png`;
+
   return (
     <div className={`
       flex items-center p-4 border border-gray-200 rounded-xl shadow-sm transition-all
       ${isSubResult ? 'bg-white/90 scale-[0.98] origin-left' : 'bg-white'}
     `}>
       {/* Airline Info */}
-      <div className="flex-none w-[120px] font-bold text-slate-800">
-        {flight.airline}
+      <div className="flex-none w-[120px] flex flex-col items-start justify-center gap-1">
+        {!imgError ? (
+          <img
+            src={airlineLogoUrl}
+            alt={`${flight.airline} logo`}
+            className="h-8 w-auto max-w-[100px] object-contain"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Plane size={20} />
+            <span className="font-bold text-slate-800">{flight.airline}</span>
+          </div>
+        )}
       </div>
 
       {/* Date Info */}
