@@ -1,5 +1,11 @@
 [
   {
+    "iata": "NYC",
+    "name": "New York City (All Airports)",
+    "city": "New York",
+    "country": "United States"
+  },
+  {
     "iata": "HIR",
     "name": "Honiara International Airport",
     "city": "Honiara",

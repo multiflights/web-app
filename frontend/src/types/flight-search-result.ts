@@ -10,6 +10,7 @@ export interface FlightSearchResult {
   airline: string;
   price: number;
   segments: FlightSegment[];
+  duration_minutes: number;
 }
 
 export interface FlightSearchResultByCombination {

@@ -126,6 +126,24 @@ async def search_flights(query: FlightSearchQuery):
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def iso_duration_to_minutes(d: str) -> int: ## This is the parser for time
+    # Ex: "PT6H10M", "PT45M", "PT7H"
+    if not d or not d.startswith("PT"):
+        raise ValueError(f"Bad duration: {d}")
+
+    s = d[2:]  # strip "PT"
+    hours = 0
+    mins = 0
+
+    if "H" in s:
+        h_part, s = s.split("H", 1)
+        hours = int(h_part) if h_part else 0
+
+    if "M" in s:
+        m_part = s.split("M", 1)[0]
+        mins = int(m_part) if m_part else 0
+
+    return hours * 60 + mins 
 
 def parse_query(q: FlightSearchQuery):
     # yields (origin, destination, date)
@@ -146,6 +164,11 @@ def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRou
 
     for offer in amadeus_offers:
         itin = offer["itineraries"][0]
+        dur_iso = itin.get("duration")
+        if not dur_iso: 
+            continue
+        duration_minutes = iso_duration_to_minutes(dur_iso)
+
         segs = itin["segments"]
 
         segments = [
@@ -166,6 +189,7 @@ def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRou
                 airline=airline,
                 price=price,
                 segments=segments,
+                duration_minutes=duration_minutes,
             )
         )
 

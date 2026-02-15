@@ -5,12 +5,15 @@ import { ChevronDown, Plane } from 'lucide-react';
 /**
  * Helper to calculate the duration between two ISO strings
  */
-const getDuration = (start: string, end: string): string => {
-  const diff = new Date(end).getTime() - new Date(start).getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff / (1000 * 60)) % 60);
-  return `${hours}h ${mins}m`;
-};
+// const getDuration = (start: string, end: string): string => {
+//   const diff = new Date(end).getTime() - new Date(start).getTime(); // This is where issue is!
+//   const hours = Math.floor(diff / (1000 * 60 * 60));
+//   const mins = Math.floor((diff / (1000 * 60)) % 60);
+//   return `${hours}h ${mins}m`;
+// };
+const fmtDuration = (min: number): string =>
+  `${Math.floor(min / 60)}h ${min % 60}m`;
+
 
 const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
   flight: FlightSearchResult,
@@ -63,7 +66,8 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
 
         <div className="flex-grow flex flex-col items-center relative min-w-[150px]">
           <span className="text-xs text-gray-500 font-medium">
-            {getDuration(first.start_time, last.end_time)}
+          {fmtDuration(flight.duration_minutes)}
+
           </span>
 
           <div className="w-full h-[2px] bg-gray-300 relative my-2
