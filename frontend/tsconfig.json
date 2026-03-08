@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -21,7 +25,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "jsx": "react"
+    "jsx": "react-jsx"
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.vue"]
 
