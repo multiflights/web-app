@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAirports } from './hooks/useAirports';
 import { AirportInput } from './components/AirportInput';
 import { DateRangePicker } from './components/DateRangePicker';
