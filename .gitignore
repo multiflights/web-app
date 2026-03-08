@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 /frontend/environment.env
 backend/environment.env
+.claude/*
