@@ -6,6 +6,7 @@ import { FlightGroup } from './components/FlightResults';
 import type {FlightSearchResultByCombination} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
+import { Button } from './components/ui/button';
 import './styles/globals.css';
 
 export default function App() {
@@ -122,20 +123,17 @@ export default function App() {
               <span>Date range</span>
             </div>
             <DateRangePicker value={dates} onChange={setDates} />
-            <small className="block mt-2 text-(--m) text-xs leading-tight">
-              Select start and end date for your flight search
-            </small>
           </div>
 
           {/* Search Button */}
           <div className="flex-none w-full md:w-[170px] flex">
-            <button
-              className="w-full min-h-[50px] md:min-h-0 border-0 rounded-[14px] cursor-pointer font-black text-white bg-linear-to-br from-(--a) to-[#73c6ff] shadow-[0_16px_35px_rgba(74,168,223,0.22)] transition-all active:scale-[0.98] disabled:opacity-65 disabled:cursor-not-allowed"
+            <Button
+              className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-(--a) to-[#73c6ff] shadow-[0_16px_35px_rgba(74,168,223,0.22)] transition-all active:scale-[0.98]"
               onClick={handleSearch}
               disabled={loading}
             >
               {loading ? 'Searching...' : 'Search ✈️'}
-            </button>
+            </Button>
           </div>
         </div>
 
