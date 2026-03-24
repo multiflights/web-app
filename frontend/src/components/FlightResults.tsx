@@ -14,6 +14,11 @@ import { ChevronDown, Plane } from 'lucide-react';
 const fmtDuration = (min: number): string =>
   `${Math.floor(min / 60)}h ${min % 60}m`;
 
+/**
+ * Helper function to get the number of days between two datetime strings (assuming both are in their local time zones)
+ */
+const getDayDiff = (s: string, e: string) => Math.round((new Date(e.slice(0,10)) - new Date(s.slice(0,10))) / 864e5);
+
 
 const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
   flight: FlightSearchResult,
@@ -24,6 +29,7 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
   const first = flight.segments[0];
   const last = flight.segments[flight.segments.length - 1];
   const stopCount = flight.segments.length - 1;
+  const dayDiff = getDayDiff(first.start_time, last.end_time);
 
   const [imgError, setImgError] = useState(false);
   const airlineLogoUrl = `https://storage.googleapis.com/multiflights-airline-logos/${flight.airline.toUpperCase()}.png`;
@@ -57,7 +63,7 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
 
       {/* Route Path */}
       <div className="flex-[3] flex items-center justify-center gap-4 px-5">
-        <div className="flex flex-col items-center min-w-[60px]">
+        <div className="flex flex-col items-left min-w-[60px]">
           <span className="text-xl font-extrabold text-gray-900">{first.origin}</span>
           <span className="text-sm font-semibold text-gray-500">
             {new Date(first.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
@@ -81,10 +87,16 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
           </span>
         </div>
 
-        <div className="flex flex-col items-center min-w-[60px]">
+        <div className="flex flex-col items-left min-w-[60px]">
           <span className="text-xl font-extrabold text-gray-900">{last.destination}</span>
-          <span className="text-sm font-semibold text-gray-500">
+          <span className="text-sm font-semibold text-gray-500 flex items-start">
             {new Date(last.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+
+            {dayDiff > 0 && (
+              <span className="ml-0.5 text-[10px] font-bold text-gray-400 -translate-y-[2px]">
+                +{dayDiff}
+              </span>
+            )}
           </span>
         </div>
       </div>
