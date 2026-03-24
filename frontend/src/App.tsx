@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAirports } from './hooks/useAirports';
 import { AirportInput } from './components/AirportInput';
+import { DateRangePicker } from './components/DateRangePicker';
 import { FlightGroup } from './components/FlightResults';
 import type {FlightSearchResultByCombination} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
+import { Button } from './components/ui/button';
 import './styles/globals.css';
 
 export default function App() {
@@ -40,12 +42,14 @@ export default function App() {
     const departureDates = getDatesInRange(dates.start, dates.end);
 
 
-    const MAX_CALLS = 20;
+    const MAX_CALLS = 50;
     const estimatedCalls = origins.length * destinations.length * departureDates.length;
-    console.log("estimatedCalls", estimatedCalls, {origins, destinations, departureDates});
     if (estimatedCalls > MAX_CALLS) {
-        setStatus(`❌ Too many requests: ${estimatedCalls} routes. Limit is ${MAX_CALLS}. Reduce airports or date range.`);
-        return;
+      const what = origins.length * destinations.length > 1
+        ? `${origins.length} origins × ${destinations.length} destinations × ${departureDates.length} days`
+        : `${departureDates.length}-day date range`;
+      setStatus(`❌ Too many routes (${estimatedCalls}). Limit is ${MAX_CALLS}. Try a shorter date range or fewer airports. (${what})`);
+      return;
     }
     if (origins.length === 0 || destinations.length === 0) {
       setStatus("❌ Please add at least one departure and arrival airport.");
@@ -117,34 +121,19 @@ export default function App() {
           <div className="flex-none w-full md:w-[280px] bg-white/55 border border-(--b) rounded-[14px] p-2.5">
             <div className="flex justify-between gap-2.5 mb-1.5 text-(--m) font-bold text-xs">
               <span>Date range</span>
-              <span>Start / End</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                className="w-full text-sm rounded-xl border border-[#5aa0d2]/25 bg-white/85 p-1.5 outline-none focus:border-(--a) focus:ring-4 focus:ring-[#4aa8df]/15 transition-all"
-                onChange={e => setDates({ ...dates, start: e.target.value })}
-              />
-              <input
-                type="date"
-                className="w-full text-sm rounded-xl border border-[#5aa0d2]/25 bg-white/85 p-1.5 outline-none focus:border-(--a) focus:ring-4 focus:ring-[#4aa8df]/15 transition-all"
-                onChange={e => setDates({ ...dates, end: e.target.value })}
-              />
-            </div>
-            <small className="block mt-2 text-(--m) text-xs leading-tight">
-              Input start and end date for your flight search
-            </small>
+            <DateRangePicker value={dates} onChange={setDates} />
           </div>
 
           {/* Search Button */}
           <div className="flex-none w-full md:w-[170px] flex">
-            <button
-              className="w-full min-h-[50px] md:min-h-0 border-0 rounded-[14px] cursor-pointer font-black text-white bg-linear-to-br from-(--a) to-[#73c6ff] shadow-[0_16px_35px_rgba(74,168,223,0.22)] transition-all active:scale-[0.98] disabled:opacity-65 disabled:cursor-not-allowed"
+            <Button
+              className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-(--a) to-[#73c6ff] shadow-[0_16px_35px_rgba(74,168,223,0.22)] transition-all active:scale-[0.98]"
               onClick={handleSearch}
               disabled={loading}
             >
               {loading ? 'Searching...' : 'Search ✈️'}
-            </button>
+            </Button>
           </div>
         </div>
 
