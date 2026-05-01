@@ -23,6 +23,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-/frontend/environment.env
-backend/environment.env
+*.pyc
+*.env
 .claude/*
+backend/__pycache__/FlightCache.cpython-313.pyc
+backend/data/__pycache__/FlightRoute.cpython-313.pyc
+.gitignore
+.DS_Store
