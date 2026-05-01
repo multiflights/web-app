@@ -9,12 +9,46 @@ import os
 import asyncio
 import amadeus
 from datetime import date, datetime
+from pathlib import Path
 from typing import List, Dict, Any
 
 from FlightCache import FlightCache
 from data.FlightRoute import FlightRoute
 from data.FlightSearchQuery import FlightSearchQuery
 from data.FlightSearchResult import FlightSearchResult, FlightSegment, FlightSearchResultByCombination
+
+
+def load_environment_file() -> None:
+    """Load local backend env values without overriding shell-provided config."""
+    env_path = Path(__file__).with_name("environment.env")
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+
+        if key:
+            os.environ.setdefault(key, value)
+
+
+def required_environment_value(name: str) -> str:
+    value = os.environ.get(name)
+    if value:
+        return value
+
+    raise RuntimeError(
+        f"Missing required environment variable {name}. "
+        "Set it in backend/environment.env or export it before starting uvicorn."
+    )
+
+
+load_environment_file()
 
 
 @asynccontextmanager
@@ -33,8 +67,8 @@ token = None
 base = "https://test.api.amadeus.com"  # or https://api.amadeus.com for prod
 
 client = amadeus.Client(
-    client_id=os.environ["AMADEUS_CLIENT_ID"],
-    client_secret=os.environ["AMADEUS_CLIENT_SECRET"]
+    client_id=required_environment_value("AMADEUS_CLIENT_ID"),
+    client_secret=required_environment_value("AMADEUS_CLIENT_SECRET")
 )
 
 token_lock = asyncio.Lock() # this stops multiple versions calling the new create function
