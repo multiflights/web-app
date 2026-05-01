@@ -11,11 +11,44 @@ from data.FlightSearchQuery import FlightSearchQuery
 from main import (
     convert_string_to_date,
     convert_string_to_datetime,
+    format_amadeus_error,
+    format_amadeus_request,
     iso_duration_to_minutes,
     parse_amadeus_results,
     parse_query,
+    redact_sensitive_params,
     required_environment_value,
 )
+
+
+class FakeAmadeusError(Exception):
+    def __init__(self, response, message="[---]", code="NetworkError"):
+        super().__init__(message)
+        self.response = response
+        self.code = code
+
+
+class FakeAmadeusResponse:
+    def __init__(self, status_code, result, request=None, http_response=None, body=None):
+        self.status_code = status_code
+        self.result = result
+        self.request = request
+        self.http_response = http_response
+        self.body = body
+
+
+class FakeAmadeusRequest:
+    verb = "GET"
+    path = "/v2/shopping/flight-offers"
+    params = {
+        "originLocationCode": "BER",
+        "destinationLocationCode": "FRA",
+        "client_secret": "do-not-log",
+    }
+
+
+class FakeNetworkErrorResponse:
+    reason = "[Errno 8] nodename nor servname provided, or not known"
 
 
 def test_iso_duration_to_minutes_parses_hours_and_minutes():
@@ -63,6 +96,79 @@ def test_required_environment_value_raises_clear_error(monkeypatch):
 
     with pytest.raises(RuntimeError, match="backend/environment.env"):
         required_environment_value("MISSING_REQUIRED_VALUE")
+
+
+def test_redact_sensitive_params_hides_secrets():
+    assert redact_sensitive_params({"client_secret": "secret", "airport": "BER"}) == {
+        "client_secret": "[redacted]",
+        "airport": "BER",
+    }
+
+
+def test_format_amadeus_request_includes_method_path_and_redacted_params():
+    assert format_amadeus_request(FakeAmadeusRequest()) == (
+        "GET /v2/shopping/flight-offers; "
+        "params={'originLocationCode': 'BER', 'destinationLocationCode': 'FRA', 'client_secret': '[redacted]'}"
+    )
+
+
+def test_format_amadeus_error_extracts_structured_error_details():
+    error = FakeAmadeusError(
+        FakeAmadeusResponse(
+            400,
+            {
+                "errors": [
+                    {
+                        "code": 4926,
+                        "title": "INVALID DATA RECEIVED",
+                        "detail": "Airport code is not supported",
+                        "source": {"parameter": "destinationLocationCode"},
+                    }
+                ]
+            },
+        )
+    )
+
+    message = format_amadeus_error(error)
+
+    assert "status=400" in message
+    assert "sdk_error=NetworkError" in message
+    assert "code=4926" in message
+    assert "title=INVALID DATA RECEIVED" in message
+    assert "detail=Airport code is not supported" in message
+    assert "source={'parameter': 'destinationLocationCode'}" in message
+
+
+def test_format_amadeus_error_falls_back_to_payload_body_or_message():
+    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, {"error": "server"}))) == (
+        "status=500; sdk_error=NetworkError; payload={'error': 'server'}"
+    )
+    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, None, body="not json"))) == (
+        "status=500; sdk_error=NetworkError; body=not json"
+    )
+    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, None))) == (
+        "status=500; sdk_error=NetworkError; message=[---]"
+    )
+
+
+def test_format_amadeus_error_includes_network_reason_and_request_context():
+    message = format_amadeus_error(
+        FakeAmadeusError(
+            FakeAmadeusResponse(
+                None,
+                None,
+                request=FakeAmadeusRequest(),
+                http_response=FakeNetworkErrorResponse(),
+            )
+        )
+    )
+
+    assert "status=None" in message
+    assert "sdk_error=NetworkError" in message
+    assert "request=GET /v2/shopping/flight-offers" in message
+    assert "originLocationCode" in message
+    assert "client_secret': '[redacted]'" in message
+    assert "network_reason=[Errno 8] nodename nor servname provided, or not known" in message
 
 
 def test_parse_amadeus_results_sorts_by_price_and_maps_segments():

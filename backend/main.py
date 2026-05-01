@@ -48,6 +48,86 @@ def required_environment_value(name: str) -> str:
     )
 
 
+def redact_sensitive_params(params):
+    if not isinstance(params, dict):
+        return params
+
+    redacted = {}
+    for key, value in params.items():
+        if any(secret in str(key).lower() for secret in ("secret", "token", "password")):
+            redacted[key] = "[redacted]"
+        else:
+            redacted[key] = value
+    return redacted
+
+
+def format_amadeus_request(request) -> str | None:
+    if request is None:
+        return None
+
+    verb = getattr(request, "verb", None)
+    path = getattr(request, "path", None)
+    params = redact_sensitive_params(getattr(request, "params", None))
+
+    parts = []
+    if verb or path:
+        parts.append(" ".join(part for part in (verb, path) if part))
+    if params:
+        parts.append(f"params={params}")
+
+    return "; ".join(parts) if parts else None
+
+
+def format_amadeus_error(error: ResponseError) -> str:
+    response = getattr(error, "response", None)
+    status_code = getattr(response, "status_code", "unknown")
+    sdk_code = getattr(error, "code", error.__class__.__name__)
+    request_summary = format_amadeus_request(getattr(response, "request", None))
+    http_response = getattr(response, "http_response", None)
+    network_reason = getattr(http_response, "reason", None)
+    result = getattr(response, "result", None)
+
+    prefix_parts = [
+        f"status={status_code}",
+        f"sdk_error={sdk_code}",
+    ]
+    if request_summary:
+        prefix_parts.append(f"request={request_summary}")
+    if network_reason:
+        prefix_parts.append(f"network_reason={network_reason}")
+
+    prefix = "; ".join(prefix_parts)
+
+    if not isinstance(result, dict):
+        body = getattr(response, "body", None)
+        if body:
+            return f"{prefix}; body={body}"
+        return f"{prefix}; message={error}"
+
+    errors = result.get("errors")
+    if not isinstance(errors, list) or not errors:
+        return f"{prefix}; payload={result}"
+
+    formatted_errors = []
+    for item in errors:
+        if not isinstance(item, dict):
+            formatted_errors.append(str(item))
+            continue
+
+        parts = [
+            f"code={item.get('code', 'unknown')}",
+            f"title={item.get('title', 'unknown')}",
+        ]
+        if item.get("detail"):
+            parts.append(f"detail={item['detail']}")
+        if item.get("source"):
+            parts.append(f"source={item['source']}")
+
+        formatted_errors.append("; ".join(parts))
+
+    return f"{prefix}; " + " | ".join(formatted_errors)
+
+
 load_environment_file()
 
 
@@ -117,10 +197,11 @@ async def fetch_single_route(origin, dest, dt_str, route):
             return flight_dicts
 
     except ResponseError as error:
-        if error.response.status_code == 429:
-            print(f"Rate limit hit for {origin}->{dest}.")
+        status_code = getattr(error.response, "status_code", None)
+        if status_code == 429:
+            print(f"Rate limit hit for {origin}->{dest}: {format_amadeus_error(error)}")
             # TODO Retry here
-        else: print(f"Amadeus Error for {origin}-{dest}: {error}")
+        else: print(f"Amadeus Error for {origin}->{dest}: {format_amadeus_error(error)}")
 
     return None
 
