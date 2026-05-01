@@ -36,8 +36,8 @@ export const AirportInput: React.FC<Props> = ({ label, allAirports, selectedCode
   };
 
   return (
-    <div className="flex-1 min-w-[220px] bg-white/55 border border-(--b) rounded-[14px] p-2.5">
-      <div className="flex justify-between gap-2.5 mb-1.5 text-(--m) font-bold text-xs">
+    <div className="flex-1 min-w-[220px] bg-surface-field border border-surface-border rounded-[14px] p-2.5">
+      <div className="flex justify-between gap-2.5 mb-1.5 text-copy-muted font-bold text-xs">
         <span>{label}</span>
       </div>
       <MultipleSelector

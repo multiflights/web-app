@@ -91,12 +91,12 @@ export default function App() {
 
   return (
     <div className="relative z-1 max-w-[1100px] mx-auto px-4 py-7 pb-12">
-      <h1 className="m-0 mb-3.5 text-[26px] tracking-tight font-bold text-[#0d2b3f]">
+      <h1 className="m-0 mb-3.5 text-[26px] tracking-tight font-bold text-copy-strong">
         Flight Tracker
       </h1>
 
       {/* Search Panel */}
-      <section className="bg-(--card) border border-(--b) rounded-[18px] shadow-[0_18px_50px_rgba(22,90,130,0.1)] backdrop-blur-[10px] p-3.5 overflow-visible relative z-10">
+      <section className="bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 overflow-visible relative z-10">
         <div className="flex flex-col md:flex-row gap-2.5 items-stretch">
 
           <AirportInput
@@ -118,8 +118,8 @@ export default function App() {
           />
 
           {/* Date Range Selection */}
-          <div className="flex-none w-full md:w-[280px] bg-white/55 border border-(--b) rounded-[14px] p-2.5">
-            <div className="flex justify-between gap-2.5 mb-1.5 text-(--m) font-bold text-xs">
+          <div className="flex-none w-full md:w-[280px] bg-surface-field border border-surface-border rounded-[14px] p-2.5">
+            <div className="flex justify-between gap-2.5 mb-1.5 text-copy-muted font-bold text-xs">
               <span>Date range</span>
             </div>
             <DateRangePicker value={dates} onChange={setDates} />
@@ -128,7 +128,7 @@ export default function App() {
           {/* Search Button */}
           <div className="flex-none w-full md:w-[170px] flex">
             <Button
-              className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-(--a) to-[#73c6ff] shadow-[0_16px_35px_rgba(74,168,223,0.22)] transition-all active:scale-[0.98]"
+              className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-brand to-brand-bright shadow-[var(--shadow-action)] transition-all active:scale-[0.98]"
               onClick={handleSearch}
               disabled={loading}
             >
@@ -137,15 +137,15 @@ export default function App() {
           </div>
         </div>
 
-        <div className="mt-2.5 text-(--m) text-xs flex justify-between flex-wrap gap-2.5">
+        <div className="mt-2.5 text-copy-muted text-xs flex justify-between flex-wrap gap-2.5">
           <div>{status}</div>
         </div>
       </section>
 
       {/* Results Panel */}
-      <section className="mt-3.5 bg-(--card) border border-(--b) rounded-[18px] shadow-[0_18px_50px_rgba(22,90,130,0.1)] backdrop-blur-[10px] p-3.5 relative z-1">
+      <section className="mt-3.5 bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 relative z-1">
         <div className="flex justify-between items-baseline mb-2.5">
-          <h2 className="m-0 text-base font-bold text-[#0d2b3f]">Results</h2>
+          <h2 className="m-0 text-base font-bold text-copy-strong">Results</h2>
         </div>
 
         <div className="flex flex-col gap-2.5">
@@ -154,7 +154,7 @@ export default function App() {
               <FlightGroup key={`${combo.origin}-${combo.destination}-${i}`} combo={combo} />
             ))
           ) : (
-            <div className="p-3 border border-dashed border-[#5aa0d2]/28 rounded-2xl bg-white/50 text-(--m) text-xs">
+            <div className="p-3 border border-dashed border-surface-border rounded-2xl bg-surface-field text-copy-muted text-xs">
               No results yet.
             </div>
           )}

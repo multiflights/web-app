@@ -17,7 +17,8 @@ const fmtDuration = (min: number): string =>
 /**
  * Helper function to get the number of days between two datetime strings (assuming both are in their local time zones)
  */
-const getDayDiff = (s: string, e: string) => Math.round((new Date(e.slice(0,10)) - new Date(s.slice(0,10))) / 864e5);
+const getDayDiff = (s: string, e: string) =>
+  Math.round((new Date(e.slice(0, 10)).getTime() - new Date(s.slice(0, 10)).getTime()) / 864e5);
 
 
 const FlightCard = ({ flight, date, isSubResult, expandBtn }: {

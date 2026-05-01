@@ -39,8 +39,8 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       <PopoverTrigger>
         <button
           className={cn(
-            "flex w-full items-center gap-2 rounded-xl border border-[#5aa0d2]/25 bg-white/85 px-3 py-1.5 text-sm outline-none transition-all",
-            "focus:border-[var(--a)] focus:ring-4 focus:ring-[#4aa8df]/15",
+            "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
+            "focus:border-brand focus:ring-4 focus:ring-brand-soft",
             !selected?.from && "text-muted-foreground",
             className
           )}
