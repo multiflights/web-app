@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useAirports } from './hooks/useAirports';
-import { AirportInput } from './components/AirportInput';
-import { DateRangePicker } from './components/DateRangePicker';
-import { FlightGroup } from './components/FlightResults';
+import { PageShell } from './components/PageShell';
+import { SearchPanel } from './components/SearchPanel';
+import { ResultsPanel } from './components/ResultsPanel';
 import type {FlightSearchResultByCombination} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
-import { Button } from './components/ui/button';
 import './styles/globals.css';
 
 export default function App() {
@@ -90,76 +89,20 @@ export default function App() {
   };
 
   return (
-    <div className="relative z-1 max-w-[1100px] mx-auto px-4 py-7 pb-12">
-      <h1 className="m-0 mb-3.5 text-[26px] tracking-tight font-bold text-copy-strong">
-        Flight Tracker
-      </h1>
-
-      {/* Search Panel */}
-      <section className="bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 overflow-visible relative z-10">
-        <div className="flex flex-col md:flex-row gap-2.5 items-stretch">
-
-          <AirportInput
-            label="Departures"
-            allAirports={allAirports}
-            selectedCodes={origins}
-            onAdd={c => setOrigins([...origins, c])}
-            onRemove={c => setOrigins(origins.filter(x => x !== c))}
-            placeholder="From..."
-          />
-
-          <AirportInput
-            label="Arrivals"
-            allAirports={allAirports}
-            selectedCodes={destinations}
-            onAdd={c => setDestinations([...destinations, c])}
-            onRemove={c => setDestinations(destinations.filter(x => x !== c))}
-            placeholder="To..."
-          />
-
-          {/* Date Range Selection */}
-          <div className="flex-none w-full md:w-[280px] bg-surface-field border border-surface-border rounded-[14px] p-2.5">
-            <div className="flex justify-between gap-2.5 mb-1.5 text-copy-muted font-bold text-xs">
-              <span>Date range</span>
-            </div>
-            <DateRangePicker value={dates} onChange={setDates} />
-          </div>
-
-          {/* Search Button */}
-          <div className="flex-none w-full md:w-[170px] flex">
-            <Button
-              className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-brand to-brand-bright shadow-[var(--shadow-action)] transition-all active:scale-[0.98]"
-              onClick={handleSearch}
-              disabled={loading}
-            >
-              {loading ? 'Searching...' : 'Search ✈️'}
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-2.5 text-copy-muted text-xs flex justify-between flex-wrap gap-2.5">
-          <div>{status}</div>
-        </div>
-      </section>
-
-      {/* Results Panel */}
-      <section className="mt-3.5 bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 relative z-1">
-        <div className="flex justify-between items-baseline mb-2.5">
-          <h2 className="m-0 text-base font-bold text-copy-strong">Results</h2>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          {results.length > 0 ? (
-            results.map((combo, i) => (
-              <FlightGroup key={`${combo.origin}-${combo.destination}-${i}`} combo={combo} />
-            ))
-          ) : (
-            <div className="p-3 border border-dashed border-surface-border rounded-2xl bg-surface-field text-copy-muted text-xs">
-              No results yet.
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
+    <PageShell>
+      <SearchPanel
+        allAirports={allAirports}
+        origins={origins}
+        destinations={destinations}
+        dates={dates}
+        loading={loading}
+        status={status}
+        onOriginsChange={setOrigins}
+        onDestinationsChange={setDestinations}
+        onDatesChange={setDates}
+        onSearch={handleSearch}
+      />
+      <ResultsPanel results={results} />
+    </PageShell>
   );
 }
