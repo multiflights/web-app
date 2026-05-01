@@ -32,3 +32,18 @@ uvicorn main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`.
+
+## Test
+
+Install the development dependencies, then run the pytest unit tests:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Run the tests with a coverage report:
+
+```bash
+python -m pytest --cov=main --cov=FlightCache --cov=data --cov-report=term-missing --cov-report=html
+```

@@ -12,6 +12,8 @@ node_modules
 dist
 dist-ssr
 *.local
+venv
+.venv
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +32,7 @@ backend/__pycache__/FlightCache.cpython-313.pyc
 backend/data/__pycache__/FlightRoute.cpython-313.pyc
 .gitignore
 .DS_Store
+
+coverage/
+htmlcov/
+.coverage

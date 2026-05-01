@@ -26,3 +26,17 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:5173`.
+
+## Test
+
+Run the Vitest unit tests:
+
+```bash
+npm test
+```
+
+Run the tests with a coverage report:
+
+```bash
+npm run test:coverage
+```
