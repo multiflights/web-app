@@ -1,6 +1,6 @@
 import { AirportInput } from './AirportInput';
 import { DateRangePicker } from './DateRangePicker';
-import { StatusMessage } from './StatusMessage';
+import { StatusMessage, type SearchStatus } from './StatusMessage';
 import { FieldContainer, MutedMetadata, PanelContainer, PrimaryActionButton } from './ui/surface';
 import type { Airport } from '../types/airport';
 
@@ -10,7 +10,7 @@ interface SearchPanelProps {
   destinations: string[];
   dates: { start: string; end: string };
   loading: boolean;
-  status: string;
+  status: SearchStatus;
   onOriginsChange: (origins: string[]) => void;
   onDestinationsChange: (destinations: string[]) => void;
   onDatesChange: (dates: { start: string; end: string }) => void;
@@ -63,12 +63,12 @@ export function SearchPanel({
             onClick={onSearch}
             disabled={loading}
           >
-            {loading ? 'Searching...' : 'Search ✈️'}
+            {loading ? 'Searching...' : 'Search'}
           </PrimaryActionButton>
         </div>
       </div>
 
-      <StatusMessage message={status} />
+      <StatusMessage status={status} />
     </PanelContainer>
   );
 }

@@ -3,6 +3,7 @@ import { useAirports } from './hooks/useAirports';
 import { PageShell } from './components/PageShell';
 import { SearchPanel } from './components/SearchPanel';
 import { ResultsPanel } from './components/ResultsPanel';
+import type { SearchStatus } from './components/StatusMessage';
 import type {FlightSearchResultByCombination} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
@@ -14,7 +15,10 @@ export default function App() {
   const [destinations, setDestinations] = useState<string[]>([]);
   const [dates, setDates] = useState({ start: '', end: '' });
   const [results, setResults] = useState<FlightSearchResultByCombination[]>([]);
-  const [status, setStatus] = useState('Enter your search, then press Search.');
+  const [status, setStatus] = useState<SearchStatus>({
+    variant: 'neutral',
+    message: 'Enter a route to search.',
+  });
   const [loading, setLoading] = useState(false);
 
   /**
@@ -47,20 +51,32 @@ export default function App() {
       const what = origins.length * destinations.length > 1
         ? `${origins.length} origins × ${destinations.length} destinations × ${departureDates.length} days`
         : `${departureDates.length}-day date range`;
-      setStatus(`❌ Too many routes (${estimatedCalls}). Limit is ${MAX_CALLS}. Try a shorter date range or fewer airports. (${what})`);
+      setStatus({
+        variant: 'error',
+        message: `Too many routes (${estimatedCalls}). Limit is ${MAX_CALLS}. Try a shorter date range or fewer airports. (${what})`,
+      });
       return;
     }
     if (origins.length === 0 || destinations.length === 0) {
-      setStatus("❌ Please add at least one departure and arrival airport.");
+      setStatus({
+        variant: 'error',
+        message: 'Please add at least one departure and arrival airport.',
+      });
       return;
     }
     if (departureDates.length === 0) {
-      setStatus("❌ Please select both a start and end date.");
+      setStatus({
+        variant: 'error',
+        message: 'Please select both a start and end date.',
+      });
       return;
     }
 
     setLoading(true);
-    setStatus("Searching...");
+    setStatus({
+      variant: 'loading',
+      message: 'Searching flights…',
+    });
 
     const searchQuery: FlightSearchQuery = {
       origins,
@@ -79,10 +95,18 @@ export default function App() {
 
       const data: FlightSearchResultByCombination[] = await response.json();
       setResults(data);
-      setStatus(data.length > 0 ? `Results found!` : 'No flights found for this search.');
+      setStatus({
+        variant: data.length > 0 ? 'success' : 'neutral',
+        message: data.length > 0
+          ? `${data.length} route option${data.length === 1 ? '' : 's'} found`
+          : 'No flights found for this search.',
+      });
     } catch (err) {
       console.error("Search failed", err);
-      setStatus("❌ Search failed. Please try again.");
+      setStatus({
+        variant: 'error',
+        message: 'Search failed. Please try again.',
+      });
     } finally {
       setLoading(false);
     }

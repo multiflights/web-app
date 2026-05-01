@@ -45,10 +45,17 @@ describe('layout components', () => {
   });
 
   it('renders status text using muted metadata styling', () => {
-    render(<StatusMessage message="Ready to search." />);
+    render(<StatusMessage status={{ variant: 'neutral', message: 'Ready to search.' }} />);
 
     expect(screen.getByText('Ready to search.')).toBeInTheDocument();
-    expect(screen.getByText('Ready to search.').parentElement).toHaveClass('text-copy-muted');
+    expect(screen.getByRole('status')).toHaveClass('text-copy-muted');
+  });
+
+  it('renders error status as an alert', () => {
+    render(<StatusMessage status={{ variant: 'error', message: 'Search failed.' }} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Search failed.');
+    expect(screen.getByRole('alert')).toHaveClass('text-red-700');
   });
 
   it('renders search fields and calls search handler', () => {
@@ -61,7 +68,7 @@ describe('layout components', () => {
         destinations={[]}
         dates={{ start: '', end: '' }}
         loading={false}
-        status="Enter your search."
+        status={{ variant: 'neutral', message: 'Enter your search.' }}
         onOriginsChange={vi.fn()}
         onDestinationsChange={vi.fn()}
         onDatesChange={vi.fn()}
@@ -74,7 +81,7 @@ describe('layout components', () => {
     expect(screen.getByText('Date range')).toBeInTheDocument();
     expect(screen.getByText('Enter your search.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Search ✈️' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(handleSearch).toHaveBeenCalledTimes(1);
   });
 
@@ -88,10 +95,13 @@ describe('layout components', () => {
   it('renders flight result details', () => {
     render(<ResultsPanel results={flightResults} />);
 
+    expect(screen.getByText('JFK → LAX · Jun 12')).toBeInTheDocument();
+    expect(screen.getAllByText('Best price').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Fastest').length).toBeGreaterThan(0);
     expect(screen.getByText('JFK')).toBeInTheDocument();
     expect(screen.getByText('LAX')).toBeInTheDocument();
-    expect(screen.getByText('$245')).toBeInTheDocument();
-    expect(screen.getByText('Direct')).toBeInTheDocument();
-    expect(screen.getByText('6h 15m')).toBeInTheDocument();
+    expect(screen.getAllByText('$245').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Direct').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('6h 15m').length).toBeGreaterThan(0);
   });
 });
