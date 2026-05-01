@@ -1,7 +1,7 @@
 import { AirportInput } from './AirportInput';
 import { DateRangePicker } from './DateRangePicker';
 import { StatusMessage } from './StatusMessage';
-import { Button } from './ui/button';
+import { FieldContainer, MutedMetadata, PanelContainer, PrimaryActionButton } from './ui/surface';
 import type { Airport } from '../types/airport';
 
 interface SearchPanelProps {
@@ -30,7 +30,7 @@ export function SearchPanel({
   onSearch,
 }: SearchPanelProps) {
   return (
-    <section className="bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 overflow-visible relative z-10">
+    <PanelContainer className="overflow-visible relative z-10">
       <div className="flex flex-col md:flex-row gap-2.5 items-stretch">
         <AirportInput
           label="Departures"
@@ -50,25 +50,25 @@ export function SearchPanel({
           placeholder="To..."
         />
 
-        <div className="flex-none w-full md:w-[280px] bg-surface-field border border-surface-border rounded-[14px] p-2.5">
-          <div className="flex justify-between gap-2.5 mb-1.5 text-copy-muted font-bold text-xs">
+        <FieldContainer className="flex-none w-full md:w-[280px]">
+          <MutedMetadata className="flex justify-between gap-2.5 mb-1.5 font-bold">
             <span>Date range</span>
-          </div>
+          </MutedMetadata>
           <DateRangePicker value={dates} onChange={onDatesChange} />
-        </div>
+        </FieldContainer>
 
         <div className="flex-none w-full md:w-[170px] flex">
-          <Button
-            className="w-full min-h-[50px] md:min-h-0 rounded-[14px] font-black text-white bg-linear-to-br from-brand to-brand-bright shadow-[var(--shadow-action)] transition-all active:scale-[0.98]"
+          <PrimaryActionButton
+            className="w-full min-h-[50px] md:min-h-0"
             onClick={onSearch}
             disabled={loading}
           >
             {loading ? 'Searching...' : 'Search ✈️'}
-          </Button>
+          </PrimaryActionButton>
         </div>
       </div>
 
       <StatusMessage message={status} />
-    </section>
+    </PanelContainer>
   );
 }

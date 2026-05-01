@@ -1,4 +1,5 @@
 import { FlightGroup } from './FlightResults';
+import { FieldContainer, MutedMetadata, PanelContainer } from './ui/surface';
 import type { FlightSearchResultByCombination } from '../types/flight-search-result';
 
 interface ResultsPanelProps {
@@ -7,7 +8,7 @@ interface ResultsPanelProps {
 
 export function ResultsPanel({ results }: ResultsPanelProps) {
   return (
-    <section className="mt-3.5 bg-surface-panel border border-surface-border rounded-[18px] shadow-[var(--shadow-panel)] backdrop-blur-[10px] p-3.5 relative z-1">
+    <PanelContainer className="mt-3.5 relative z-1">
       <div className="flex justify-between items-baseline mb-2.5">
         <h2 className="m-0 text-base font-bold text-copy-strong">Results</h2>
       </div>
@@ -18,11 +19,13 @@ export function ResultsPanel({ results }: ResultsPanelProps) {
             <FlightGroup key={`${combo.origin}-${combo.destination}-${i}`} combo={combo} />
           ))
         ) : (
-          <div className="p-3 border border-dashed border-surface-border rounded-2xl bg-surface-field text-copy-muted text-xs">
-            No results yet.
-          </div>
+          <FieldContainer className="p-3 border-dashed rounded-2xl">
+            <MutedMetadata>
+              No results yet.
+            </MutedMetadata>
+          </FieldContainer>
         )}
       </div>
-    </section>
+    </PanelContainer>
   );
 }

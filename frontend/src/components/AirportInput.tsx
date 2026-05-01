@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { Airport } from '../types/airport';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import { FieldContainer, MutedMetadata } from './ui/surface';
 
 interface Props {
   label: string;
@@ -36,10 +37,10 @@ export const AirportInput: React.FC<Props> = ({ label, allAirports, selectedCode
   };
 
   return (
-    <div className="flex-1 min-w-[220px] bg-surface-field border border-surface-border rounded-[14px] p-2.5">
-      <div className="flex justify-between gap-2.5 mb-1.5 text-copy-muted font-bold text-xs">
+    <FieldContainer className="flex-1 min-w-[220px]">
+      <MutedMetadata className="flex justify-between gap-2.5 mb-1.5 font-bold">
         <span>{label}</span>
-      </div>
+      </MutedMetadata>
       <MultipleSelector
         value={selectedOptions}
         onSearchSync={handleSearch}
@@ -52,6 +53,6 @@ export const AirportInput: React.FC<Props> = ({ label, allAirports, selectedCode
         emptyIndicator={<p className="text-center text-sm">No airports found.</p>}
         onChange={handleChange}
       />
-    </div>
+    </FieldContainer>
   );
 };

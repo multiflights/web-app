@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { FlightSearchResult, FlightSearchResultByCombination } from '../types/flight-search-result';
 import { ChevronDown, Plane } from 'lucide-react';
+import { MutedMetadata, PrimaryActionButton, ResultCard } from './ui/surface';
+import { cn } from '@/lib/utils';
 
 /**
  * Helper to calculate the duration between two ISO strings
@@ -36,10 +38,12 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
   const airlineLogoUrl = `https://storage.googleapis.com/multiflights-airline-logos/${flight.airline.toUpperCase()}.png`;
 
   return (
-    <div className={`
-      flex items-center p-4 border border-gray-200 rounded-xl shadow-sm transition-all
-      ${isSubResult ? 'bg-white/90 scale-[0.98] origin-left' : 'bg-white'}
-    `}>
+    <ResultCard
+      className={cn(
+        'flex items-center p-4',
+        isSubResult && 'scale-[0.98] origin-left'
+      )}
+    >
       {/* Airline Info */}
       <div className="flex-none w-[120px] flex flex-col items-start justify-center gap-1">
         {!imgError ? (
@@ -50,37 +54,36 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="flex items-center gap-2 text-slate-400">
+          <MutedMetadata className="flex items-center gap-2">
             <Plane size={20} />
-            <span className="font-bold text-slate-800">{flight.airline}</span>
-          </div>
+            <span className="font-bold text-copy-strong">{flight.airline}</span>
+          </MutedMetadata>
         )}
       </div>
 
       {/* Date Info */}
-      <div className="flex-none w-[100px] text-center text-gray-500 text-sm border-l border-gray-100">
+      <MutedMetadata className="flex-none w-[100px] text-center text-sm border-l border-surface-border">
         {new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-      </div>
+      </MutedMetadata>
 
       {/* Route Path */}
       <div className="flex-[3] flex items-center justify-center gap-4 px-5">
         <div className="flex flex-col items-left min-w-[60px]">
-          <span className="text-xl font-extrabold text-gray-900">{first.origin}</span>
-          <span className="text-sm font-semibold text-gray-500">
+          <span className="text-xl font-extrabold text-copy-strong">{first.origin}</span>
+          <MutedMetadata className="text-sm font-semibold">
             {new Date(first.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-          </span>
+          </MutedMetadata>
         </div>
 
         <div className="flex-grow flex flex-col items-center relative min-w-[150px]">
-          <span className="text-xs text-gray-500 font-medium">
-          {fmtDuration(flight.duration_minutes)}
+          <MutedMetadata className="font-medium">
+            {fmtDuration(flight.duration_minutes)}
+          </MutedMetadata>
 
-          </span>
-
-          <div className="w-full h-[2px] bg-gray-300 relative my-2
+          <div className="w-full h-[2px] bg-surface-border relative my-2
             after:content-[''] after:absolute after:right-[-2px] after:top-[-4px]
             after:w-2.5 after:h-2.5 after:border-t-2 after:border-r-2
-            after:border-gray-300 after:rotate-45">
+            after:border-surface-border after:rotate-45">
           </div>
 
           <span className={`text-xs font-bold ${stopCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
@@ -89,32 +92,32 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn }: {
         </div>
 
         <div className="flex flex-col items-left min-w-[60px]">
-          <span className="text-xl font-extrabold text-gray-900">{last.destination}</span>
-          <span className="text-sm font-semibold text-gray-500 flex items-start">
+          <span className="text-xl font-extrabold text-copy-strong">{last.destination}</span>
+          <MutedMetadata className="text-sm font-semibold flex items-start">
             {new Date(last.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
 
             {dayDiff > 0 && (
-              <span className="ml-0.5 text-[10px] font-bold text-gray-400 -translate-y-[2px]">
+              <span className="ml-0.5 text-[10px] font-bold text-copy-muted -translate-y-[2px]">
                 +{dayDiff}
               </span>
             )}
-          </span>
+          </MutedMetadata>
         </div>
       </div>
 
       {/* Price & Action */}
       <div className="flex-none w-[140px] flex flex-col items-end">
-        <span className="text-2xl font-black text-[#0770e3]">${flight.price.toFixed(0)}</span>
-        <button className="mt-1 bg-[#0770e3] text-white px-6 py-2.5 rounded-md font-bold hover:bg-[#065ebf] transition-colors">
+        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+        <PrimaryActionButton className="mt-1 px-6 py-2.5 rounded-md">
           Select
-        </button>
+        </PrimaryActionButton>
       </div>
 
       {/* Expand Info */}
       <div className="flex-none w-[50px] flex items-center justify-center ml-4">
         {expandBtn}
       </div>
-    </div>
+    </ResultCard>
   );
 };
 
@@ -138,7 +141,7 @@ export const FlightGroup = ({ combo }: { combo: FlightSearchResultByCombination 
           </span>
 
             <ChevronDown
-              className={`transition-transform duration-300 text-gray-900 ${expanded ? 'rotate-180' : ''}`}
+              className={`transition-transform duration-300 text-copy-strong ${expanded ? 'rotate-180' : ''}`}
               size={28}
             />
           </button>
