@@ -1,14 +1,17 @@
 import { useState, type ReactNode } from 'react';
 import type { FlightSearchResult, FlightSearchResultByCombination } from '../types/flight-search-result';
 import { ChevronDown, Plane } from 'lucide-react';
-import { MutedMetadata, PrimaryActionButton, ResultCard } from './ui/surface';
+import { MutedMetadata, PrimaryActionButton, ResultCard } from './base/surface';
 import { cn } from '@/lib/utils';
 
 const fmtDuration = (min: number): string =>
   `${Math.floor(min / 60)}h ${min % 60}m`;
 
+const parseDisplayDate = (value: string): Date =>
+  new Date(value.length === 10 ? `${value}T12:00:00` : value);
+
 const formatDate = (value: string): string =>
-  new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  parseDisplayDate(value).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
 const formatTime = (value: string): string =>
   new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });

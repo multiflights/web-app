@@ -1,5 +1,5 @@
 import { FlightGroup } from './FlightResults';
-import { FieldContainer, MutedMetadata, PanelContainer } from './ui/surface';
+import { FieldContainer, MutedMetadata, PanelContainer } from './base/surface';
 import type { FlightSearchResultByCombination } from '../types/flight-search-result';
 
 interface ResultsPanelProps {

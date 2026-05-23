@@ -1,7 +1,7 @@
 import { AirportInput } from './AirportInput';
 import { DateRangePicker } from './DateRangePicker';
 import { StatusMessage, type SearchStatus } from './StatusMessage';
-import { FieldContainer, MutedMetadata, PanelContainer, PrimaryActionButton } from './ui/surface';
+import { FieldContainer, MutedMetadata, PanelContainer, PrimaryActionButton } from './base/surface';
 import type { Airport } from '../types/airport';
 
 interface SearchPanelProps {

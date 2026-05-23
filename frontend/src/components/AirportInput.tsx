@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { Airport } from '../types/airport';
-import MultipleSelector, { type Option } from '@/components/ui/multi-select';
-import { FieldContainer, MutedMetadata } from './ui/surface';
+import MultipleSelector, { type Option } from '@/components/base/multi-select';
+import { FieldContainer, MutedMetadata } from './base/surface';
 
 interface Props {
   label: string;

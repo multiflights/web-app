@@ -7,7 +7,7 @@ import {
   PanelContainer,
   PrimaryActionButton,
   ResultCard,
-} from '../ui/surface';
+} from '../base/surface';
 
 describe('surface primitives', () => {
   it('applies shared panel styling and caller classes', () => {
