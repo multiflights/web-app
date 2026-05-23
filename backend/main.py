@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 from FlightCache import FlightCache
 from data.FlightRoute import FlightRoute
 from data.FlightSearchQuery import FlightSearchQuery
-from data.Flight import Flight, FlightSegment, FlightSearchResult
+from data.FlightSearchResult import Flight, FlightSegment, FlightSearchResult
 
 
 def load_environment_file() -> None:

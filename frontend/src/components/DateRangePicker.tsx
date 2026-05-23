@@ -21,7 +21,12 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     return from ? { from, to } : undefined;
   }, [value.start, value.end]);
 
-  const handleSelect = (range: DateRange | undefined) => {
+  const handleSelect = (range: DateRange | undefined, selectedDay: Date) => {
+    // If a complete range exists, or clicked day is before current start → restart selection
+    if ((selected?.from && selected?.to) || (selected?.from && !selected?.to && selectedDay < selected.from)) {
+      onChange({ start: format(selectedDay, "yyyy-MM-dd"), end: "" });
+      return;
+    }
     onChange({
       start: range?.from ? format(range.from, "yyyy-MM-dd") : "",
       end: range?.to ? format(range.to, "yyyy-MM-dd") : "",
@@ -49,13 +54,14 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
           <span className="truncate">{label}</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-4" align="start">
+      <PopoverContent className="w-auto p-4" align="center">
         <Calendar
           mode="range"
           selected={selected}
           onSelect={handleSelect}
           numberOfMonths={2}
           disabled={{ before: new Date() }}
+          className="[--cell-size:--spacing(18)]"
         />
       </PopoverContent>
     </Popover>

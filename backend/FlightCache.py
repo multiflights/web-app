@@ -2,7 +2,7 @@ import time
 from typing import List, Dict
 
 from data.FlightRoute import FlightRoute
-from data.Flight import FlightSearchResult
+from data.FlightSearchResult import FlightSearchResult
 
 
 class FlightCache:
