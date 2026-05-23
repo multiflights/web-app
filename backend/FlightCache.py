@@ -2,7 +2,7 @@ import time
 from typing import List, Dict
 
 from data.FlightRoute import FlightRoute
-from data.FlightSearchResult import FlightSearchResultByCombination
+from data.Flight import FlightSearchResult
 
 
 class FlightCache:
@@ -10,7 +10,7 @@ class FlightCache:
         self._cache = {}
         self.ttl = ttl_seconds
 
-    def get(self, route: FlightRoute) -> FlightSearchResultByCombination:
+    def get(self, route: FlightRoute) -> FlightSearchResult:
         key = f"{route.origin}:{route.destination}:{route.date}"
         entry = self._cache.get(key)
         if not entry:

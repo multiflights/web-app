@@ -1,9 +1,9 @@
 import { FlightGroup } from './FlightResults';
 import { FieldContainer, MutedMetadata, PanelContainer } from './base/surface';
-import type { FlightSearchResultByCombination } from '../types/flight-search-result';
+import type { FlightSearchResult } from '../types/flight-search-result';
 
 interface ResultsPanelProps {
-  results: FlightSearchResultByCombination[];
+  results: FlightSearchResult[];
 }
 
 export function ResultsPanel({ results }: ResultsPanelProps) {

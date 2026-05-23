@@ -9,18 +9,18 @@ class FlightSegment(BaseModel):
     end_time: datetime
 
 
-class FlightSearchResult(BaseModel):
+class Flight(BaseModel):
     """Represents a single flight route that can consist of multiple segments"""
     airline: str
     price: float
     segments: List[FlightSegment]
-    duration_minutes : int 
+    duration_minutes: int
 
 
-class FlightSearchResultByCombination(BaseModel):
+class FlightSearchResult(BaseModel):
     """Contains all flight results for a specific (date, origin, destination) combination"""
     date: date
     origin: str
     destination: str
-    flights: List[FlightSearchResult]
+    flights: List[Flight]
 

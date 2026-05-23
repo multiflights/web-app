@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 from FlightCache import FlightCache
 from data.FlightRoute import FlightRoute
 from data.FlightSearchQuery import FlightSearchQuery
-from data.FlightSearchResult import FlightSearchResult, FlightSegment, FlightSearchResultByCombination
+from data.Flight import Flight, FlightSegment, FlightSearchResult
 
 
 def load_environment_file() -> None:
@@ -274,8 +274,8 @@ def convert_string_to_datetime(s: str) -> datetime:
 def convert_string_to_date(s: str) -> date:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
              
-def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRoute) -> FlightSearchResultByCombination | None:
-    flights: List[FlightSearchResult] = []
+def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRoute) -> FlightSearchResult | None:
+    flights: List[Flight] = []
 
     for offer in amadeus_offers:
         itin = offer["itineraries"][0]
@@ -300,7 +300,7 @@ def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRou
         price = float(offer["price"]["total"])
 
         flights.append(
-            FlightSearchResult(
+            Flight(
                 airline=airline,
                 price=price,
                 segments=segments,
@@ -313,7 +313,7 @@ def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]], route: FlightRou
 
     flights.sort(key=lambda r: r.price)
 
-    return FlightSearchResultByCombination(
+    return FlightSearchResult(
         date=route.date,
         origin=route.origin,
         destination=route.destination,

@@ -5,7 +5,7 @@ export interface FlightSegment {
   end_time: string;
 }
 
-export interface FlightSearchResult {
+export interface Flight {
   /** Represents a single flight route that can consist of multiple segments */
   airline: string;
   price: number;
@@ -13,12 +13,12 @@ export interface FlightSearchResult {
   duration_minutes: number;
 }
 
-export interface FlightSearchResultByCombination {
+export interface FlightSearchResult {
   /** 
    * Contains all flight results for a specific (date, origin, destination) combination 
    */
   date: string;
   origin: string;
   destination: string;
-  flights: FlightSearchResult[];
+  flights: Flight[];
 }

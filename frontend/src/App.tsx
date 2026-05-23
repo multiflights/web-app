@@ -4,7 +4,7 @@ import { PageShell } from './components/PageShell';
 import { SearchPanel } from './components/SearchPanel';
 import { ResultsPanel } from './components/ResultsPanel';
 import type { SearchStatus } from './components/StatusMessage';
-import type {FlightSearchResultByCombination} from './types/flight-search-result';
+import type {FlightSearchResult} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
 import './styles/globals.css';
@@ -14,7 +14,7 @@ export default function App() {
   const [origins, setOrigins] = useState<string[]>([]);
   const [destinations, setDestinations] = useState<string[]>([]);
   const [dates, setDates] = useState({ start: '', end: '' });
-  const [results, setResults] = useState<FlightSearchResultByCombination[]>([]);
+  const [results, setResults] = useState<FlightSearchResult[]>([]);
   const [status, setStatus] = useState<SearchStatus>({
     variant: 'neutral',
     message: 'Enter a route to search.',
@@ -93,7 +93,7 @@ export default function App() {
 
       if (!response.ok) throw new Error('Search failed');
 
-      const data: FlightSearchResultByCombination[] = await response.json();
+      const data: FlightSearchResult[] = await response.json();
       setResults(data);
       setStatus({
         variant: data.length > 0 ? 'success' : 'neutral',

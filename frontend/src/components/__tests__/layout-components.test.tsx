@@ -6,14 +6,14 @@ import { ResultsPanel } from '../ResultsPanel';
 import { SearchPanel } from '../SearchPanel';
 import { StatusMessage } from '../StatusMessage';
 import type { Airport } from '../../types/airport';
-import type { FlightSearchResultByCombination } from '../../types/flight-search-result';
+import type { FlightSearchResult } from '../../types/flight-search-result';
 
 const airports: Airport[] = [
   { iata: 'JFK', label: 'JFK - New York', text: 'jfk new york john f kennedy' },
   { iata: 'LAX', label: 'LAX - Los Angeles', text: 'lax los angeles' },
 ];
 
-const flightResults: FlightSearchResultByCombination[] = [
+const flightResults: FlightSearchResult[] = [
   {
     date: '2026-06-12',
     origin: 'JFK',

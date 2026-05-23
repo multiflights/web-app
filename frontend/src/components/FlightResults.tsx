@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { FlightSearchResult, FlightSearchResultByCombination } from '../types/flight-search-result';
+import type { Flight, FlightSearchResult } from '../types/flight-search-result';
 import { ChevronDown, Plane } from 'lucide-react';
 import { MutedMetadata, PrimaryActionButton, ResultCard } from './base/surface';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ function ResultChip({ children, tone = 'neutral' }: { children: ReactNode; tone?
   );
 }
 
-function RouteTimeline({ flight }: { flight: FlightSearchResult }) {
+function RouteTimeline({ flight }: { flight: Flight }) {
   const first = flight.segments[0];
   const last = flight.segments[flight.segments.length - 1];
   const dayDiff = getDayDiff(first.start_time, last.end_time);
@@ -90,7 +90,7 @@ function RouteTimeline({ flight }: { flight: FlightSearchResult }) {
   );
 }
 
-function FlightMeta({ flight, badges }: { flight: FlightSearchResult; badges: string[] }) {
+function FlightMeta({ flight, badges }: { flight: Flight; badges: string[] }) {
   const stopCount = flight.segments.length - 1;
 
   return (
@@ -107,7 +107,7 @@ function FlightMeta({ flight, badges }: { flight: FlightSearchResult; badges: st
 }
 
 const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
-  flight: FlightSearchResult,
+  flight: Flight,
   date: string,
   isSubResult?: boolean,
   expandBtn?: ReactNode,
@@ -160,13 +160,13 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
   );
 };
 
-export const FlightGroup = ({ combo }: { combo: FlightSearchResultByCombination }) => {
+export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
   const [expanded, setExpanded] = useState(false);
   const others = combo.flights.slice(1, 5);
   const bestPrice = Math.min(...combo.flights.map(flight => flight.price));
   const fastestDuration = Math.min(...combo.flights.map(flight => flight.duration_minutes));
 
-  const getBadges = (flight: FlightSearchResult) => [
+  const getBadges = (flight: Flight) => [
     flight.price === bestPrice ? 'Best price' : null,
     flight.duration_minutes === fastestDuration ? 'Fastest' : null,
   ].filter((badge): badge is string => Boolean(badge));
