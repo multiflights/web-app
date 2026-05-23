@@ -120,14 +120,6 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
         isSubResult && 'bg-surface-field shadow-none'
       )}
     >
-      <div className="flex items-center justify-between gap-4 md:hidden">
-        <AirlineMark airline={flight.airline} />
-        <div className="flex items-center gap-3 text-right">
-          <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
-          {expandBtn}
-        </div>
-      </div>
-
       <div className="hidden md:flex md:items-center">
         <AirlineMark airline={flight.airline} />
       </div>
@@ -140,6 +132,14 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
         <RouteTimeline flight={flight} />
         <div className="md:hidden">
           <FlightMeta flight={flight} badges={badges} />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 md:hidden">
+        <AirlineMark airline={flight.airline} />
+        <div className="flex items-center gap-3 text-right">
+          <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+          {expandBtn}
         </div>
       </div>
 
@@ -191,7 +191,7 @@ export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
         badges={getBadges(combo.flights[0])}
         expandBtn={others.length > 0 && (
           <button
-            className="group inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-field px-2.5 py-1 text-xs font-bold text-copy-strong transition-colors hover:bg-brand-soft"
+            className="group inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-surface-border bg-surface-field px-2.5 py-1 text-xs font-bold text-copy-strong transition-colors hover:bg-brand-soft"
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
           >

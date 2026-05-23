@@ -37,7 +37,7 @@ export const AirportInput: React.FC<Props> = ({ label, allAirports, selectedCode
   };
 
   return (
-    <FieldContainer className="flex-1 min-w-[220px]">
+    <FieldContainer className="flex-1 min-w-0">
       <MutedMetadata className="flex justify-between gap-2.5 mb-1.5 font-bold">
         <span>{label}</span>
       </MutedMetadata>
