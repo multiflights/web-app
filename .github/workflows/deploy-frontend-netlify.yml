@@ -3,7 +3,7 @@ name: Deploy Frontend to Netlify
 on:
   push:
     branches:
-      - netlify-github-actions
+      - main
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend-netlify.yml"
