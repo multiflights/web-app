@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react';
 import type { Flight, FlightSearchResult } from '../types/flight-search-result';
 import { ChevronDown, Plane } from 'lucide-react';
 import { MutedMetadata, PrimaryActionButton, ResultCard } from './base/surface';
+import { buttonVariants } from './base/button';
 import { cn } from '@/lib/utils';
+import { config } from '../config';
 
 const fmtDuration = (min: number): string =>
   `${Math.floor(min / 60)}h ${min % 60}m`;
@@ -19,9 +21,10 @@ const formatTime = (value: string): string =>
 const getDayDiff = (s: string, e: string) =>
   Math.round((new Date(e.slice(0, 10)).getTime() - new Date(s.slice(0, 10)).getTime()) / 864e5);
 
-function AirlineMark({ airline }: { airline: string }) {
+function AirlineMark({ airline, airlineLogoUrl }: { airline: string; airlineLogoUrl?: string | null }) {
   const [imgError, setImgError] = useState(false);
-  const airlineLogoUrl = `https://storage.googleapis.com/multiflights-airline-logos/${airline.toUpperCase()}.png`;
+  const fallbackAirlineLogoUrl = `https://storage.googleapis.com/multiflights-airline-logos/${airline.toUpperCase()}.png`;
+  const logoSrc = airlineLogoUrl || fallbackAirlineLogoUrl;
 
   if (imgError) {
     return (
@@ -34,11 +37,60 @@ function AirlineMark({ airline }: { airline: string }) {
 
   return (
     <img
-      src={airlineLogoUrl}
+      src={logoSrc}
       alt={`${airline} logo`}
       className="h-8 w-auto max-w-[100px] object-contain"
       onError={() => setImgError(true)}
     />
+  );
+}
+
+function SelectAction({ flight }: { flight: Flight }) {
+  console.log('Flight booking details:', { flight });
+  if (!flight.booking_url && !flight.booking_request) {
+    return (
+      <PrimaryActionButton
+        className="rounded-md px-5 py-2"
+        disabled
+      >
+        Select
+      </PrimaryActionButton>
+    );
+  }
+
+  if (flight.booking_request?.method === 'POST') {
+    return (
+      <form
+        action={`${config.apiUrl}/booking/redirect`}
+        method="post"
+        target="_blank"
+        className="inline-flex"
+      >
+        <input type="hidden" name="method" value={flight.booking_request.method} />
+        <input type="hidden" name="url" value={flight.booking_request.url} />
+        <input type="hidden" name="post_data" value={flight.booking_request.post_data ?? ''} />
+        <PrimaryActionButton className="rounded-md px-5 py-2" type="submit">
+          Select
+        </PrimaryActionButton>
+      </form>
+    );
+  }
+
+  return (
+    <a
+      href={flight.booking_url ?? flight.booking_request?.url}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        buttonVariants({
+          className:
+            'rounded-[14px] rounded-md bg-linear-to-br from-brand to-brand-bright px-5 py-2 font-black text-white shadow-[var(--shadow-action)] transition-all active:scale-[0.98]',
+        }),
+        'inline-flex'
+      )}
+    >
+      Select
+    </a>
   );
 }
 
@@ -121,7 +173,7 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
       )}
     >
       <div className="hidden md:flex md:items-center">
-        <AirlineMark airline={flight.airline} />
+        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
       </div>
 
       <MutedMetadata className="hidden text-sm font-semibold md:block">
@@ -136,9 +188,12 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
       </div>
 
       <div className="flex items-center justify-between gap-4 md:hidden">
-        <AirlineMark airline={flight.airline} />
-        <div className="flex items-center gap-3 text-right">
-          <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+          </div>
+          <SelectAction flight={flight} />
           {expandBtn}
         </div>
       </div>
@@ -146,9 +201,7 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
       <div className="hidden md:flex md:flex-col md:items-end md:gap-2">
         <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
         <div className="flex items-center gap-2">
-          <PrimaryActionButton className="px-5 py-2 rounded-md">
-            Select
-          </PrimaryActionButton>
+          <SelectAction flight={flight} />
           {expandBtn}
         </div>
       </div>
