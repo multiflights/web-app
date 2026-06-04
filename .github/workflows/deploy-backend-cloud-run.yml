@@ -3,7 +3,7 @@ name: Deploy Backend to Cloud Run
 on:
   push:
     branches:
-      - main
+      - dev-30-backend-cicd
     paths:
       - "backend/**"
       - ".github/workflows/deploy-backend-cloud-run.yml"
