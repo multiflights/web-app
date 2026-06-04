@@ -3,52 +3,21 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-os.environ.setdefault("AMADEUS_CLIENT_ID", "test-client-id")
-os.environ.setdefault("AMADEUS_CLIENT_SECRET", "test-client-secret")
+os.environ.setdefault("SERPAPI_KEY", "test-serpapi-key")
 
 from data.FlightRoute import FlightRoute
 from data.FlightSearchQuery import FlightSearchQuery
+from data.FlightSearchResult import BookingRequest
 from main import (
     convert_string_to_date,
     convert_string_to_datetime,
-    format_amadeus_error,
-    format_amadeus_request,
+    find_booking_request,
     iso_duration_to_minutes,
-    parse_amadeus_results,
     parse_query,
+    parse_serpapi_results,
     redact_sensitive_params,
     required_environment_value,
 )
-
-
-class FakeAmadeusError(Exception):
-    def __init__(self, response, message="[---]", code="NetworkError"):
-        super().__init__(message)
-        self.response = response
-        self.code = code
-
-
-class FakeAmadeusResponse:
-    def __init__(self, status_code, result, request=None, http_response=None, body=None):
-        self.status_code = status_code
-        self.result = result
-        self.request = request
-        self.http_response = http_response
-        self.body = body
-
-
-class FakeAmadeusRequest:
-    verb = "GET"
-    path = "/v2/shopping/flight-offers"
-    params = {
-        "originLocationCode": "BER",
-        "destinationLocationCode": "FRA",
-        "client_secret": "do-not-log",
-    }
-
-
-class FakeNetworkErrorResponse:
-    reason = "[Errno 8] nodename nor servname provided, or not known"
 
 
 def test_iso_duration_to_minutes_parses_hours_and_minutes():
@@ -105,137 +74,73 @@ def test_redact_sensitive_params_hides_secrets():
     }
 
 
-def test_format_amadeus_request_includes_method_path_and_redacted_params():
-    assert format_amadeus_request(FakeAmadeusRequest()) == (
-        "GET /v2/shopping/flight-offers; "
-        "params={'originLocationCode': 'BER', 'destinationLocationCode': 'FRA', 'client_secret': '[redacted]'}"
-    )
-
-
-def test_format_amadeus_error_extracts_structured_error_details():
-    error = FakeAmadeusError(
-        FakeAmadeusResponse(
-            400,
-            {
-                "errors": [
-                    {
-                        "code": 4926,
-                        "title": "INVALID DATA RECEIVED",
-                        "detail": "Airport code is not supported",
-                        "source": {"parameter": "destinationLocationCode"},
-                    }
-                ]
-            },
-        )
-    )
-
-    message = format_amadeus_error(error)
-
-    assert "status=400" in message
-    assert "sdk_error=NetworkError" in message
-    assert "code=4926" in message
-    assert "title=INVALID DATA RECEIVED" in message
-    assert "detail=Airport code is not supported" in message
-    assert "source={'parameter': 'destinationLocationCode'}" in message
-
-
-def test_format_amadeus_error_falls_back_to_payload_body_or_message():
-    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, {"error": "server"}))) == (
-        "status=500; sdk_error=NetworkError; payload={'error': 'server'}"
-    )
-    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, None, body="not json"))) == (
-        "status=500; sdk_error=NetworkError; body=not json"
-    )
-    assert format_amadeus_error(FakeAmadeusError(FakeAmadeusResponse(500, None))) == (
-        "status=500; sdk_error=NetworkError; message=[---]"
-    )
-
-
-def test_format_amadeus_error_includes_network_reason_and_request_context():
-    message = format_amadeus_error(
-        FakeAmadeusError(
-            FakeAmadeusResponse(
-                None,
-                None,
-                request=FakeAmadeusRequest(),
-                http_response=FakeNetworkErrorResponse(),
-            )
-        )
-    )
-
-    assert "status=None" in message
-    assert "sdk_error=NetworkError" in message
-    assert "request=GET /v2/shopping/flight-offers" in message
-    assert "originLocationCode" in message
-    assert "client_secret': '[redacted]'" in message
-    assert "network_reason=[Errno 8] nodename nor servname provided, or not known" in message
-
-
-def test_parse_amadeus_results_sorts_by_price_and_maps_segments():
-    route = FlightRoute("JFK", "LAX", date(2026, 6, 12))
-    offers = [
+def test_find_booking_request_searches_nested_booking_options():
+    booking_options = [
         {
-            "itineraries": [
-                {
-                    "duration": "PT6H30M",
-                    "segments": [
-                        {
-                            "departure": {"iataCode": "JFK", "at": "2026-06-12T08:00:00"},
-                            "arrival": {"iataCode": "LAX", "at": "2026-06-12T11:30:00"},
-                            "carrierCode": "AA",
-                        }
-                    ],
-                }
-            ],
-            "validatingAirlineCodes": ["AA"],
-            "price": {"total": "350.25"},
-        },
-        {
-            "itineraries": [
-                {
-                    "duration": "PT7H",
-                    "segments": [
-                        {
-                            "departure": {"iataCode": "JFK", "at": "2026-06-12T09:00:00"},
-                            "arrival": {"iataCode": "LAX", "at": "2026-06-12T12:00:00"},
-                            "carrierCode": "DL",
-                        }
-                    ],
-                }
-            ],
-            "price": {"total": "240.00"},
-        },
-        {
-            "itineraries": [
-                {
-                    "segments": [
-                        {
-                            "departure": {"iataCode": "JFK", "at": "2026-06-12T10:00:00"},
-                            "arrival": {"iataCode": "LAX", "at": "2026-06-12T13:00:00"},
-                            "carrierCode": "UA",
-                        }
-                    ],
-                }
-            ],
-            "price": {"total": "100.00"},
-        },
+            "together": {
+                "book_with": "Example OTA",
+                "booking_request": {
+                    "url": "https://partner.example/checkout",
+                    "post_data": "token=abc123",
+                },
+            }
+        }
     ]
 
-    result = parse_amadeus_results(offers, route)
+    assert find_booking_request(booking_options) == {
+        "url": "https://partner.example/checkout",
+        "post_data": "token=abc123",
+    }
+
+
+def test_parse_serpapi_results_maps_booking_get_and_post_actions():
+    route = FlightRoute("LAX", "JFK", date(2026, 6, 12))
+    serpapi_payload = {
+        "best_flights": [
+            {
+                "flights": [
+                    {
+                        "departure_airport": {"id": "LAX", "time": "2026-06-12 08:00"},
+                        "arrival_airport": {"id": "JFK", "time": "2026-06-12 16:10"},
+                        "airline": "JetBlue",
+                        "airline_logo": "https://cdn.example.com/b6.png",
+                    }
+                ],
+                "total_duration": 370,
+                "price": 249,
+                "airline_logo": "https://cdn.example.com/b6-itinerary.png",
+                "booking_token": "token-get",
+            },
+            {
+                "flights": [
+                    {
+                        "departure_airport": {"id": "LAX", "time": "2026-06-12 09:30"},
+                        "arrival_airport": {"id": "JFK", "time": "2026-06-12 18:20"},
+                        "airline": "Delta",
+                    }
+                ],
+                "total_duration": 410,
+                "price": 275,
+                "booking_token": "token-post",
+            },
+        ]
+    }
+    booking_requests = {
+        "token-get": BookingRequest(method="GET", url="https://partner.example/direct"),
+        "token-post": BookingRequest(method="POST", url="https://www.google.com/travel/clk/f", post_data="x=1"),
+    }
+
+    result = parse_serpapi_results(serpapi_payload, route, booking_requests)
 
     assert result is not None
-    assert result.origin == "JFK"
-    assert result.destination == "LAX"
-    assert result.date == date(2026, 6, 12)
-    assert [flight.price for flight in result.flights] == [240.0, 350.25]
-    assert result.flights[0].airline == "DL"
-    assert result.flights[0].duration_minutes == 420
-    assert result.flights[0].segments[0].origin == "JFK"
-    assert result.flights[0].segments[0].destination == "LAX"
-
-
-def test_parse_amadeus_results_returns_none_when_no_valid_offers():
-    route = FlightRoute("JFK", "LAX", date(2026, 6, 12))
-
-    assert parse_amadeus_results([], route) is None
-    assert parse_amadeus_results([{"itineraries": [{"segments": []}]}], route) is None
+    assert result.origin == "LAX"
+    assert result.destination == "JFK"
+    assert len(result.flights) == 2
+    assert result.flights[0].airline == "JetBlue"
+    assert result.flights[0].airline_logo_url == "https://cdn.example.com/b6-itinerary.png"
+    assert result.flights[0].booking_url == "https://partner.example/direct"
+    assert result.flights[0].booking_request is not None
+    assert result.flights[0].booking_request.method == "GET"
+    assert result.flights[1].booking_request is not None
+    assert result.flights[1].booking_request.method == "POST"
+    assert result.flights[1].booking_url is None
