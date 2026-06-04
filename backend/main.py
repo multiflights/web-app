@@ -149,6 +149,7 @@ async def fetch_serpapi_json(params: Dict[str, Any]) -> Dict[str, Any]:
         **params,
         "engine": "google_flights",
         "api_key": required_environment_value("SERPAPI_KEY"),
+        "no_cache": "true",
     }
 
     try:
@@ -157,7 +158,19 @@ async def fetch_serpapi_json(params: Dict[str, Any]) -> Dict[str, Any]:
             response.raise_for_status()
     except httpx.HTTPError as error:
         sanitized = redact_sensitive_params(request_params)
-        raise RuntimeError(f"SerpApi request failed; params={sanitized}; error={error}") from error
+        response = getattr(error, "response", None)
+        response_body = None
+        if response is not None:
+            try:
+                response_body = response.text
+            except Exception:
+                response_body = None
+
+        details = f"SerpApi request failed; params={sanitized}; error={error}"
+        if response_body:
+            details += f"; response_body={response_body}"
+
+        raise RuntimeError(details) from error
 
     payload = response.json()
     if payload.get("error"):
@@ -167,8 +180,24 @@ async def fetch_serpapi_json(params: Dict[str, Any]) -> Dict[str, Any]:
     return payload
 
 
-async def fetch_booking_request(booking_token: str) -> BookingRequest | None:
-    payload = await fetch_serpapi_json({"booking_token": booking_token})
+async def fetch_booking_request(
+    booking_token: str,
+    origin: str,
+    destination: str,
+    outbound_date: str,
+) -> BookingRequest | None:
+    payload = await fetch_serpapi_json(
+        {
+            "booking_token": booking_token,
+            "departure_id": origin,
+            "arrival_id": destination,
+            "outbound_date": outbound_date,
+            "currency": "USD",
+            "type": "2",
+            "hl": "en",
+            "gl": "us",
+        }
+    )
     booking_request = find_booking_request(payload.get("booking_options"))
     if not booking_request:
         return None
@@ -334,7 +363,7 @@ async def fetch_single_route(origin: str, dest: str, dt_str: str, route: FlightR
             if isinstance(itinerary.get("booking_token"), str)
         ]
         booking_requests_list = await asyncio.gather(
-            *(fetch_booking_request(token) for token in booking_tokens),
+            *(fetch_booking_request(token, origin, dest, dt_str) for token in booking_tokens),
             return_exceptions=True,
         )
 
