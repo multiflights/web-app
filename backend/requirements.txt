@@ -1,5 +1,5 @@
 fastapi
 httpx
 pydantic
+python-multipart
 uvicorn
-amadeus

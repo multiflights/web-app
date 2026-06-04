@@ -1,0 +1,97 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - dev-30-backend-cicd
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend-cloud-run.yml"
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY || 'flight-search-backend' }}
+  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'flight-search-backend' }}
+  IMAGE_NAME: flight-search-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required GitHub configuration
+        run: |
+          if [ -z "${GCP_PROJECT_ID}" ]; then
+            echo "Missing repository variable GCP_PROJECT_ID" >&2
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+            echo "Missing repository secret GCP_SA_KEY" >&2
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.AMADEUS_CLIENT_ID }}" ] || [ -z "${{ secrets.AMADEUS_CLIENT_SECRET }}" ]; then
+            echo "Missing Amadeus backend secrets" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Ensure Artifact Registry repository exists
+        run: |
+          gcloud artifacts repositories describe "${GAR_REPOSITORY}" \
+            --location="${GCP_REGION}" \
+            --project="${GCP_PROJECT_ID}" \
+          || gcloud artifacts repositories create "${GAR_REPOSITORY}" \
+            --repository-format=docker \
+            --location="${GCP_REGION}" \
+            --description="Docker repository for Flight Search backend" \
+            --project="${GCP_PROJECT_ID}"
+
+      - name: Build container image
+        working-directory: backend
+        run: |
+          docker build \
+            -t "${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}" \
+            .
+
+      - name: Push container image
+        run: |
+          docker push \
+            "${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --image="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}" \
+            --region="${GCP_REGION}" \
+            --project="${GCP_PROJECT_ID}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --cpu=1 \
+            --memory=512Mi \
+            --min-instances=0 \
+            --max-instances=1 \
+            --concurrency=80 \
+            --timeout=300 \
+            --set-env-vars="AMADEUS_CLIENT_ID=${{ secrets.AMADEUS_CLIENT_ID }},AMADEUS_CLIENT_SECRET=${{ secrets.AMADEUS_CLIENT_SECRET }}"

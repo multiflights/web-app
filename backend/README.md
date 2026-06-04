@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI service for flight search. It queries the Amadeus API and exposes HTTP endpoints for the frontend.
+FastAPI service for flight search. It queries SerpApi's Google Flights engine and exposes HTTP endpoints for the frontend.
 
 ## Setup
 
@@ -11,19 +11,25 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Copy the example environment file and fill in your Amadeus credentials:
+Copy the example environment file and fill in your SerpApi API key:
 
 ```bash
 cp environment.env.example environment.env
 ```
 
 ```env
-AMADEUS_CLIENT_ID=your_client_id
-AMADEUS_CLIENT_SECRET=your_client_secret
-AMADEUS_BASE_URL=https://test.api.amadeus.com
+SERPAPI_KEY=your_api_key
 ```
 
 The backend automatically loads `backend/environment.env` for local development. Values already exported in your shell take priority over values in the file.
+
+## Notes
+
+- The current search flow uses one-way Google Flights searches because the backend query model only carries departure dates.
+- SerpApi returns booking options separately. The backend resolves those into:
+  - `booking_url` for direct `GET` deeplinks
+  - `booking_request` for actions that require a server-side `POST`
+- The frontend currently enables `Select` only when `booking_url` is available.
 
 ## Run
 

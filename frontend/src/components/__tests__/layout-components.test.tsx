@@ -21,6 +21,8 @@ const flightResults: FlightSearchResult[] = [
     flights: [
       {
         airline: 'AA',
+        airline_logo_url: 'https://cdn.example.com/aa.png',
+        booking_url: 'https://partner.example/direct-booking',
         price: 245.33,
         duration_minutes: 375,
         segments: [
@@ -103,5 +105,8 @@ describe('layout components', () => {
     expect(screen.getAllByText('$245').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Direct').length).toBeGreaterThan(0);
     expect(screen.getAllByText('6h 15m').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Select' })).toSatisfy((links: HTMLElement[]) =>
+      links.every(link => link.getAttribute('href') === 'https://partner.example/direct-booking')
+    );
   });
 });
