@@ -31,6 +31,7 @@ jobs:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       GCP_REGION: ${{ vars.GCP_REGION }}
       CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'flight-search-backend' }}
+      VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL }}
 
     steps:
       - name: Checkout repository
@@ -63,17 +64,21 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Resolve backend URL from Cloud Run
+      - name: Resolve backend URL
         run: |
-          BACKEND_URL="$(
-            gcloud run services describe "${CLOUD_RUN_SERVICE}" \
-              --region="${GCP_REGION}" \
-              --project="${GCP_PROJECT_ID}" \
-              --format='value(status.url)'
-          )"
+          BACKEND_URL="${VITE_BACKEND_URL}"
 
           if [ -z "${BACKEND_URL}" ]; then
-            echo "Failed to resolve Cloud Run service URL for ${CLOUD_RUN_SERVICE}" >&2
+            BACKEND_URL="$(
+              gcloud run services describe "${CLOUD_RUN_SERVICE}" \
+                --region="${GCP_REGION}" \
+                --project="${GCP_PROJECT_ID}" \
+                --format='value(status.url)'
+            )"
+          fi
+
+          if [ -z "${BACKEND_URL}" ]; then
+            echo "Failed to resolve backend URL from VITE_BACKEND_URL or Cloud Run service ${CLOUD_RUN_SERVICE}" >&2
             exit 1
           fi
 
