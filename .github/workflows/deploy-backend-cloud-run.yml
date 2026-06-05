@@ -38,8 +38,8 @@ jobs:
             exit 1
           fi
 
-          if [ -z "${{ secrets.AMADEUS_CLIENT_ID }}" ] || [ -z "${{ secrets.AMADEUS_CLIENT_SECRET }}" ]; then
-            echo "Missing Amadeus backend secrets" >&2
+          if [ -z "${{ secrets.SERPAPI_KEY }}" ]; then
+            echo "Missing repository secret SERPAPI_KEY" >&2
             exit 1
           fi
 
@@ -94,4 +94,4 @@ jobs:
             --max-instances=1 \
             --concurrency=80 \
             --timeout=300 \
-            --set-env-vars="AMADEUS_CLIENT_ID=${{ secrets.AMADEUS_CLIENT_ID }},AMADEUS_CLIENT_SECRET=${{ secrets.AMADEUS_CLIENT_SECRET }}"
+            --set-env-vars="SERPAPI_KEY=${{ secrets.SERPAPI_KEY }}"
