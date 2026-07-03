@@ -41,18 +41,16 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
-        <button
-          className={cn(
-            "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
-            "focus:border-brand focus:ring-4 focus:ring-brand-soft",
-            !selected?.from && "text-muted-foreground",
-            className
-          )}
-        >
-          <CalendarIcon className="size-4 shrink-0 opacity-60" />
-          <span className="truncate">{label}</span>
-        </button>
+      <PopoverTrigger
+        className={cn(
+          "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
+          "focus:border-brand focus:ring-4 focus:ring-brand-soft",
+          !selected?.from && "text-muted-foreground",
+          className
+        )}
+      >
+        <CalendarIcon className="size-4 shrink-0 opacity-60" />
+        <span className="truncate">{label}</span>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-4" align="center">
         <Calendar

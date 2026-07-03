@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAirports } from './hooks/useAirports';
 import { PageShell } from './components/PageShell';
 import { SearchPanel } from './components/SearchPanel';
@@ -7,13 +7,14 @@ import type { SearchStatus } from './components/StatusMessage';
 import type {FlightSearchResult} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
+import { buildSearchParams, parseSearchParams } from './lib/urlSearchState';
 import './styles/globals.css';
 
 export default function App() {
   const { allAirports } = useAirports();
-  const [origins, setOrigins] = useState<string[]>([]);
-  const [destinations, setDestinations] = useState<string[]>([]);
-  const [dates, setDates] = useState({ start: '', end: '' });
+  const [origins, setOrigins] = useState<string[]>(() => parseSearchParams(window.location.search).origins);
+  const [destinations, setDestinations] = useState<string[]>(() => parseSearchParams(window.location.search).destinations);
+  const [dates, setDates] = useState(() => parseSearchParams(window.location.search).dates);
   const [results, setResults] = useState<FlightSearchResult[]>([]);
   const [status, setStatus] = useState<SearchStatus>({
     variant: 'neutral',
@@ -111,6 +112,21 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const query = buildSearchParams({ origins, destinations, dates });
+    window.history.replaceState(null, '', query || window.location.pathname);
+  }, [origins, destinations, dates]);
+
+  const hasAutoSearched = useRef(false);
+  useEffect(() => {
+    if (hasAutoSearched.current) return;
+    hasAutoSearched.current = true;
+    if (origins.length > 0 && destinations.length > 0 && dates.start && dates.end) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <PageShell>
