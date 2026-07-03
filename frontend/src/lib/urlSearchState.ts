@@ -34,3 +34,21 @@ export function buildSearchParams({ origins, destinations, dates }: SearchInputS
   const query = params.toString();
   return query ? `?${query}` : '';
 }
+
+/**
+ * True when the URL carries any search-related parameter at all. Because the
+ * URL is only written when a search is triggered, this doubles as "a search was
+ * committed at some point" — even if the committed search was incomplete.
+ */
+export function hasAnySearchParam({ origins, destinations, dates }: SearchInputState): boolean {
+  return origins.length > 0 || destinations.length > 0 || Boolean(dates.start) || Boolean(dates.end);
+}
+
+/**
+ * True when the params describe a runnable search: at least one origin, one
+ * destination, and a start date (the end date is optional for single-day
+ * searches). Only a complete search should be auto-replayed on load.
+ */
+export function isCompleteSearch({ origins, destinations, dates }: SearchInputState): boolean {
+  return origins.length > 0 && destinations.length > 0 && Boolean(dates.start);
+}

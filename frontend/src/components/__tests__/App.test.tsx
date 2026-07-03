@@ -33,9 +33,18 @@ const setUrl = (search: string) => {
   window.history.pushState({}, '', search || '/');
 };
 
-const seedStoredResults = (results: FlightSearchResult[]) => {
-  window.localStorage.setItem('flight-search:results', JSON.stringify(results));
+const seedDraft = (draft: {
+  origins: string[];
+  destinations: string[];
+  dates: { start: string; end: string };
+}) => {
+  window.localStorage.setItem('flight-search:draft', JSON.stringify(draft));
 };
+
+const searchCalls = () =>
+  (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(([input]) =>
+    String(input).includes('/search')
+  );
 
 describe('App URL-synced search state', () => {
   beforeEach(() => {
@@ -67,34 +76,34 @@ describe('App URL-synced search state', () => {
 
     expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
 
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/search'))).toBe(false);
+      expect(searchCalls()).toHaveLength(0);
     });
   });
 
-  it('does not auto-search when inputs are populated but no prior results are stored', async () => {
-    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
+  it('restores draft inputs (but never searches) when the URL has no params', async () => {
+    // The user typed a full route but never pressed Search, so nothing was
+    // committed to the URL. A refresh must keep those inputs without fetching.
+    seedDraft({ origins: ['JFK'], destinations: ['LAX'], dates: { start: '2026-06-01', end: '2026-06-01' } });
 
     render(<App />);
 
+    expect(await screen.findByText('JFK')).toBeInTheDocument();
+    expect(screen.getByText('LAX')).toBeInTheDocument();
     expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
 
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/search'))).toBe(false);
+      expect(searchCalls()).toHaveLength(0);
     });
   });
 
-  it('hydrates inputs and auto-refetches results when prior results were stored', async () => {
+  it('hydrates inputs and auto-refetches when the URL carries a complete search', async () => {
     setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
-    seedStoredResults(flightResults);
 
     render(<App />);
 
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/search'))).toBe(true);
+      expect(searchCalls()).not.toHaveLength(0);
     });
 
     await screen.findByText('1 route option found');
@@ -102,94 +111,65 @@ describe('App URL-synced search state', () => {
 
   it('hydrates and auto-refetches a single-day search (start only, no end)', async () => {
     setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01');
-    seedStoredResults(flightResults);
 
     render(<App />);
 
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/search'))).toBe(true);
+      expect(searchCalls()).not.toHaveLength(0);
     });
 
     await screen.findByText('1 route option found');
   });
 
-  it('persists freshly fetched results back to local storage after an auto-refetch', async () => {
-    // A stale single-result set is stored from a previous session...
-    seedStoredResults(flightResults);
-    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
-
-    // ...but the search endpoint now returns a different, cheaper flight.
-    const refreshedResults: FlightSearchResult[] = [
-      {
-        date: '2026-06-01',
-        origin: 'JFK',
-        destination: 'LAX',
-        flights: [
-          {
-            airline: 'DL',
-            airline_logo_url: null,
-            booking_url: 'https://partner.example/refreshed-booking',
-            price: 199.0,
-            duration_minutes: 360,
-            segments: [
-              {
-                origin: 'JFK',
-                destination: 'LAX',
-                start_time: '2026-06-01T09:00:00',
-                end_time: '2026-06-01T12:00:00',
-              },
-            ],
-          },
-        ],
-      },
-    ];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString();
-        if (url.includes('/airports.json')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
-        }
-        if (url.includes('/search')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve(refreshedResults) } as Response);
-        }
-        return Promise.reject(new Error(`unexpected fetch: ${url}`));
-      })
-    );
+  it('does not auto-search when the URL params are incomplete', async () => {
+    // Only origins present (e.g. a hand-edited URL): the pre-search view stays.
+    setUrl('/?origins=JFK');
 
     render(<App />);
 
+    expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
+
     await waitFor(() => {
-      const stored = JSON.parse(window.localStorage.getItem('flight-search:results') ?? '[]');
-      expect(stored).toEqual(refreshedResults);
+      expect(searchCalls()).toHaveLength(0);
     });
   });
 
-  it('swaps origins and destinations when the swap button is clicked', async () => {
-    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
+  it('writes the URL params only once a search is actually triggered', async () => {
+    // Complete draft, but no committed search yet: URL stays clean on load.
+    seedDraft({ origins: ['JFK'], destinations: ['LAX'], dates: { start: '2026-06-01', end: '2026-06-01' } });
+
+    render(<App />);
+
+    await screen.findByText('JFK');
+    expect(window.location.search).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: /^search$/i }));
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('origins=JFK');
+      expect(window.location.search).toContain('destinations=LAX');
+      expect(window.location.search).toContain('start=2026-06-01');
+    });
+    await screen.findByText('1 route option found');
+  });
+
+  it('does not touch the URL when swap is clicked before searching', async () => {
+    seedDraft({ origins: ['JFK'], destinations: ['LAX'], dates: { start: '2026-06-01', end: '2026-06-01' } });
 
     render(<App />);
 
     fireEvent.click(await screen.findByRole('button', { name: /swap departures and arrivals/i }));
 
+    // Swap is an input edit, not a search, so the URL must remain empty...
+    expect(window.location.search).toBe('');
+    expect(searchCalls()).toHaveLength(0);
+
+    // ...but a subsequent search commits the swapped route to the URL.
+    fireEvent.click(screen.getByRole('button', { name: /^search$/i }));
+
     await waitFor(() => {
       expect(window.location.search).toContain('origins=LAX');
       expect(window.location.search).toContain('destinations=JFK');
     });
-  });
-
-  it('keeps the URL in sync as the results status updates after a search', async () => {
-    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
-    seedStoredResults(flightResults);
-
-    render(<App />);
-
-    await screen.findByText('1 route option found');
-
-    expect(window.location.search).toContain('origins=JFK');
-    expect(window.location.search).toContain('destinations=LAX');
-    expect(window.location.search).toContain('start=2026-06-01');
-    expect(window.location.search).toContain('end=2026-06-01');
   });
 });

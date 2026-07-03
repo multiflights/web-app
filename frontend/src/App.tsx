@@ -7,16 +7,37 @@ import type { SearchStatus } from './components/StatusMessage';
 import type {FlightSearchResult} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
-import { buildSearchParams, parseSearchParams } from './lib/urlSearchState';
-import { loadStoredResults, saveStoredResults } from './lib/resultsStorage';
+import {
+  buildSearchParams,
+  hasAnySearchParam,
+  isCompleteSearch,
+  parseSearchParams,
+  type SearchInputState,
+} from './lib/urlSearchState';
+import { loadDraftInputs, saveDraftInputs } from './lib/draftStorage';
 import './styles/globals.css';
+
+/**
+ * Resolves the input field values to show on load.
+ *
+ * The URL query string records the *last committed search* — it is written only
+ * when a search is triggered, never on plain input edits. So on load:
+ *  - If the URL carries any search params, those win and any locally saved draft
+ *    is ignored, so a refresh always resets the fields to the last search.
+ *  - If the URL is empty, no search has ever been committed, so we restore the
+ *    draft the user was typing before the refresh.
+ */
+function getInitialInputs(): SearchInputState {
+  const fromUrl = parseSearchParams(window.location.search);
+  return hasAnySearchParam(fromUrl) ? fromUrl : loadDraftInputs();
+}
 
 export default function App() {
   const { allAirports } = useAirports();
-  const [origins, setOrigins] = useState<string[]>(() => parseSearchParams(window.location.search).origins);
-  const [destinations, setDestinations] = useState<string[]>(() => parseSearchParams(window.location.search).destinations);
-  const [dates, setDates] = useState(() => parseSearchParams(window.location.search).dates);
-  const [results, setResults] = useState<FlightSearchResult[]>(() => loadStoredResults());
+  const [origins, setOrigins] = useState<string[]>(() => getInitialInputs().origins);
+  const [destinations, setDestinations] = useState<string[]>(() => getInitialInputs().destinations);
+  const [dates, setDates] = useState(() => getInitialInputs().dates);
+  const [results, setResults] = useState<FlightSearchResult[]>([]);
   const [status, setStatus] = useState<SearchStatus>({
     variant: 'neutral',
     message: 'Enter a route to search.',
@@ -75,6 +96,15 @@ export default function App() {
       return;
     }
 
+    // The search is valid, so commit it to the URL now. This is the only place
+    // the URL is written, so a refresh replays exactly this search and discards
+    // any input edits made afterwards.
+    window.history.replaceState(
+      null,
+      '',
+      buildSearchParams({ origins, destinations, dates }) || window.location.pathname
+    );
+
     setLoading(true);
     setStatus({
       variant: 'loading',
@@ -123,28 +153,21 @@ export default function App() {
     setDestinations(origins);
   };
 
+  // Persist the in-progress inputs so a refresh before the first-ever search
+  // keeps whatever the user has typed. Once a search is committed the URL takes
+  // over on reload, so this draft only matters while the URL is still empty.
   useEffect(() => {
-    const query = buildSearchParams({ origins, destinations, dates });
-    window.history.replaceState(null, '', query || window.location.pathname);
+    saveDraftInputs({ origins, destinations, dates });
   }, [origins, destinations, dates]);
-
-  useEffect(() => {
-    saveStoredResults(results);
-  }, [results]);
 
   const hasAutoSearched = useRef(false);
   useEffect(() => {
     if (hasAutoSearched.current) return;
     hasAutoSearched.current = true;
-    // Only auto-refetch on load when a previous search produced results.
-    // Otherwise a page with fully populated inputs (but no prior search)
-    // would trigger an unwanted search on refresh.
-    if (
-      results.length > 0 &&
-      origins.length > 0 &&
-      destinations.length > 0 &&
-      dates.start
-    ) {
+    // A complete set of URL params means a real search was committed before the
+    // reload, so replay it. Incomplete or absent params leave the initial,
+    // pre-search view untouched and never trigger a fetch.
+    if (isCompleteSearch(parseSearchParams(window.location.search))) {
       handleSearch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
