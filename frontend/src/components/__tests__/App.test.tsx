@@ -100,6 +100,20 @@ describe('App URL-synced search state', () => {
     await screen.findByText('1 route option found');
   });
 
+  it('hydrates and auto-refetches a single-day search (start only, no end)', async () => {
+    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01');
+    seedStoredResults(flightResults);
+
+    render(<App />);
+
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/search'))).toBe(true);
+    });
+
+    await screen.findByText('1 route option found');
+  });
+
   it('persists freshly fetched results back to local storage after an auto-refetch', async () => {
     // A stale single-result set is stored from a previous session...
     seedStoredResults(flightResults);

@@ -21,16 +21,20 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     return from ? { from, to } : undefined;
   }, [value.start, value.end]);
 
-  const handleSelect = (range: DateRange | undefined, selectedDay: Date) => {
-    // If a complete range exists, or clicked day is before current start → restart selection
-    if ((selected?.from && selected?.to) || (selected?.from && !selected?.to && selectedDay < selected.from)) {
-      onChange({ start: format(selectedDay, "yyyy-MM-dd"), end: "" });
+  const handleSelect = (_range: DateRange | undefined, selectedDay: Date) => {
+    const from = selected?.from;
+    const day = format(selectedDay, "yyyy-MM-dd");
+
+    // Start a fresh single-day selection when there's no start yet, a complete
+    // range already exists, or the clicked day is on/before the current start.
+    // The on/before case keeps a re-clicked day single instead of "day – day".
+    if (!from || selected?.to || selectedDay <= from) {
+      onChange({ start: day, end: "" });
       return;
     }
-    onChange({
-      start: range?.from ? format(range.from, "yyyy-MM-dd") : "",
-      end: range?.to ? format(range.to, "yyyy-MM-dd") : "",
-    });
+
+    // A later day completes the range.
+    onChange({ start: format(from, "yyyy-MM-dd"), end: day });
   };
 
   const label = selected?.from

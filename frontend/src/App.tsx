@@ -29,7 +29,8 @@ export default function App() {
   const getDatesInRange = (startDateStr: string, endDateStr: string): string[] => {
     const datesArr: string[] = [];
     let curr = new Date(startDateStr);
-    const end = new Date(endDateStr);
+    // An empty end date means a single-day search: fall back to the start date.
+    const end = new Date(endDateStr || startDateStr);
 
     if (isNaN(curr.getTime()) || isNaN(end.getTime()) || curr > end) return [];
 
@@ -134,8 +135,7 @@ export default function App() {
       results.length > 0 &&
       origins.length > 0 &&
       destinations.length > 0 &&
-      dates.start &&
-      dates.end
+      dates.start
     ) {
       handleSearch();
     }
