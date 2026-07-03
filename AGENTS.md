@@ -51,7 +51,7 @@ Act as a senior software engineer. Produce clean, correct, maintainable, and sec
 
 1. Understand the requirement and constraints before coding.
 2. Check the `.claude/` folder for project-specific context when relevant.
-3. For design work, inspect [frontend/src/styles/globals.css](/Users/timothykugler/Projects/VSCode/Personal/flight-search-engine/frontend/src/styles/globals.css) first and reuse existing variables and visual patterns where possible.
+3. For design work, inspect [frontend/src/styles/globals.css](frontend/src/styles/globals.css) first and reuse existing variables and visual patterns where possible.
 4. Plan structure and data flow before implementation.
 5. Implement incrementally and verify each layer.
 6. Review your own work for correctness, security, and unnecessary complexity.
