@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: netlify-frontend-${{ github.ref }}
+  group: netlify-frontend-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
