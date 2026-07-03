@@ -283,14 +283,14 @@ const MultipleSelector = ({
     >
       <div
         className={cn(
-          'border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative min-h-11 rounded-md border text-base transition-[color,box-shadow] outline-none focus-within:ring-[3px] has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 md:min-h-9.5 md:text-sm',
+          'border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative flex min-h-11 items-center rounded-md border text-base transition-[color,box-shadow] outline-none focus-within:ring-[3px] has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 md:min-h-9.5 md:text-sm',
           { 'p-1': selected.length !== 0, 'cursor-text': !disabled && selected.length !== 0 },
           !hideClearAllButton && 'pr-9',
           className
         )}
         onClick={() => { if (disabled) return; inputRef?.current?.focus() }}
       >
-        <div className='flex flex-wrap gap-1'>
+        <div className='flex w-full min-w-0 flex-wrap gap-1'>
           {selected.map(option => (
             <div
               key={option.value}
