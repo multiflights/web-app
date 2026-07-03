@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '../../App';
@@ -163,6 +163,19 @@ describe('App URL-synced search state', () => {
     await waitFor(() => {
       const stored = JSON.parse(window.localStorage.getItem('flight-search:results') ?? '[]');
       expect(stored).toEqual(refreshedResults);
+    });
+  });
+
+  it('swaps origins and destinations when the swap button is clicked', async () => {
+    setUrl('/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-01');
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /swap departures and arrivals/i }));
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('origins=LAX');
+      expect(window.location.search).toContain('destinations=JFK');
     });
   });
 

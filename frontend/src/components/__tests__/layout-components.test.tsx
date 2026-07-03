@@ -73,6 +73,7 @@ describe('layout components', () => {
         status={{ variant: 'neutral', message: 'Enter your search.' }}
         onOriginsChange={vi.fn()}
         onDestinationsChange={vi.fn()}
+        onSwap={vi.fn()}
         onDatesChange={vi.fn()}
         onSearch={handleSearch}
       />
@@ -85,6 +86,29 @@ describe('layout components', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(handleSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls the swap handler when the swap button is clicked', () => {
+    const handleSwap = vi.fn();
+
+    render(
+      <SearchPanel
+        allAirports={airports}
+        origins={['JFK']}
+        destinations={['LAX']}
+        dates={{ start: '', end: '' }}
+        loading={false}
+        status={{ variant: 'neutral', message: 'Enter your search.' }}
+        onOriginsChange={vi.fn()}
+        onDestinationsChange={vi.fn()}
+        onSwap={handleSwap}
+        onDatesChange={vi.fn()}
+        onSearch={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /swap departures and arrivals/i }));
+    expect(handleSwap).toHaveBeenCalledTimes(1);
   });
 
   it('shows an empty results state', () => {

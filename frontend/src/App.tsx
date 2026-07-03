@@ -115,6 +115,14 @@ export default function App() {
     }
   };
 
+  /**
+   * Swap the departure and arrival airport lists.
+   */
+  const handleSwap = () => {
+    setOrigins(destinations);
+    setDestinations(origins);
+  };
+
   useEffect(() => {
     const query = buildSearchParams({ origins, destinations, dates });
     window.history.replaceState(null, '', query || window.location.pathname);
@@ -153,6 +161,7 @@ export default function App() {
         status={status}
         onOriginsChange={setOrigins}
         onDestinationsChange={setDestinations}
+        onSwap={handleSwap}
         onDatesChange={setDates}
         onSearch={handleSearch}
       />
