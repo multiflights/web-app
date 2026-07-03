@@ -124,13 +124,23 @@ describe('layout components', () => {
     expect(screen.getByText('JFK → LAX · Jun 12')).toBeInTheDocument();
     expect(screen.getAllByText('Best price').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Fastest').length).toBeGreaterThan(0);
-    expect(screen.getByText('JFK')).toBeInTheDocument();
-    expect(screen.getByText('LAX')).toBeInTheDocument();
+    expect(screen.getAllByText('JFK').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('LAX').length).toBeGreaterThan(0);
     expect(screen.getAllByText('$245').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Direct').length).toBeGreaterThan(0);
     expect(screen.getAllByText('6h 15m').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: 'Select' })).toSatisfy((links: HTMLElement[]) =>
       links.every(link => link.getAttribute('href') === 'https://partner.example/direct-booking')
     );
+  });
+
+  it('renders airline and price exactly once in each card layout variant', () => {
+    render(<ResultsPanel results={flightResults} />);
+
+    // Each card renders one mobile and one desktop layout; neither may
+    // duplicate the airline mark or the price within itself.
+    expect(screen.getAllByAltText('AA logo')).toHaveLength(2);
+    expect(screen.getAllByText('$245')).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Select' })).toHaveLength(2);
   });
 });

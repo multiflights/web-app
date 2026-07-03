@@ -10,6 +10,21 @@ class ResizeObserverMock {
 
 globalThis.ResizeObserver = ResizeObserverMock;
 
+// jsdom does not implement matchMedia; default to desktop-width matches so
+// components using useMediaQuery('(min-width: ...)') render desktop layouts.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: true,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
+
 // jsdom in this environment does not provide localStorage, so supply a
 // minimal in-memory implementation for tests that rely on it.
 if (typeof window !== 'undefined' && !window.localStorage) {

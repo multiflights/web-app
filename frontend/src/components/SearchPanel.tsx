@@ -59,7 +59,7 @@ export function SearchPanel({
             onClick={onSwap}
             aria-label="Swap departures and arrivals"
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20
-                       grid place-items-center size-9 rounded-full
+                       grid place-items-center size-11 md:size-9 rounded-full
                        bg-surface-panel border border-surface-border shadow-[var(--shadow-panel)]
                        text-copy-muted hover:text-foreground transition-all active:scale-95
                        focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"

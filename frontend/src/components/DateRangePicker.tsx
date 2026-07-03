@@ -4,6 +4,7 @@ import type { DateRange } from "react-day-picker";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/base/popover";
 import { Calendar } from "@/components/base/calendar";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
@@ -14,6 +15,7 @@ interface DateRangePickerProps {
 
 export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const selected: DateRange | undefined = React.useMemo(() => {
     const from = value.start ? new Date(value.start + "T00:00:00") : undefined;
@@ -56,15 +58,15 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
         <CalendarIcon className="size-4 shrink-0 opacity-60" />
         <span className="truncate">{label}</span>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-4" align="center">
+      <PopoverContent className="w-auto max-w-[calc(100vw-1rem)] p-4" align="center">
         <Calendar
           mode="range"
           selected={selected}
           onSelect={handleSelect}
-          numberOfMonths={2}
+          numberOfMonths={isDesktop ? 2 : 1}
           showOutsideDays={false}
           disabled={{ before: new Date() }}
-          className="[--cell-size:--spacing(18)]"
+          className="[--cell-size:--spacing(11)] md:[--cell-size:--spacing(18)]"
         />
       </PopoverContent>
     </Popover>

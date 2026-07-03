@@ -45,12 +45,12 @@ function AirlineMark({ airline, airlineLogoUrl }: { airline: string; airlineLogo
   );
 }
 
-function SelectAction({ flight }: { flight: Flight }) {
+function SelectAction({ flight, className }: { flight: Flight; className?: string }) {
   console.log('Flight booking details:', { flight });
   if (!flight.booking_url && !flight.booking_request) {
     return (
       <PrimaryActionButton
-        className="rounded-md px-5 py-2"
+        className={cn('rounded-md px-5 py-2', className)}
         disabled
       >
         Select
@@ -64,12 +64,12 @@ function SelectAction({ flight }: { flight: Flight }) {
         action={`${config.apiUrl}/booking/redirect`}
         method="post"
         target="_blank"
-        className="inline-flex"
+        className={cn('inline-flex', className)}
       >
         <input type="hidden" name="method" value={flight.booking_request.method} />
         <input type="hidden" name="url" value={flight.booking_request.url} />
         <input type="hidden" name="post_data" value={flight.booking_request.post_data ?? ''} />
-        <PrimaryActionButton className="rounded-md px-5 py-2" type="submit">
+        <PrimaryActionButton className="w-full rounded-md px-5 py-2" type="submit">
           Select
         </PrimaryActionButton>
       </form>
@@ -86,7 +86,8 @@ function SelectAction({ flight }: { flight: Flight }) {
           className:
             'rounded-[14px] rounded-md bg-linear-to-br from-brand to-brand-bright px-5 py-2 font-black text-white shadow-[var(--shadow-action)] transition-all active:scale-[0.98]',
         }),
-        'inline-flex'
+        'inline-flex',
+        className
       )}
     >
       Select
@@ -158,6 +159,63 @@ function FlightMeta({ flight, badges }: { flight: Flight; badges: string[] }) {
   );
 }
 
+interface FlightCardLayoutProps {
+  flight: Flight;
+  date: string;
+  expandBtn?: ReactNode;
+  badges: string[];
+}
+
+// Mobile (< md): stacked rows — airline + price, route, chips, actions.
+function FlightCardMobile({ flight, expandBtn, badges }: FlightCardLayoutProps) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex items-center justify-between gap-4">
+        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
+        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+      </div>
+
+      <RouteTimeline flight={flight} />
+
+      <FlightMeta flight={flight} badges={badges} />
+
+      <div className="flex items-center gap-3">
+        <SelectAction flight={flight} className="min-h-11 flex-1" />
+        {expandBtn}
+      </div>
+    </div>
+  );
+}
+
+// Desktop (>= md): single grid row — airline | date | route + chips | price + actions.
+function FlightCardDesktop({ flight, date, expandBtn, badges }: FlightCardLayoutProps) {
+  return (
+    <div className="hidden gap-4 md:grid md:grid-cols-[minmax(112px,0.9fr)_minmax(76px,0.55fr)_minmax(260px,2.1fr)_minmax(132px,0.85fr)] md:items-center">
+      <div className="flex items-center">
+        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
+      </div>
+
+      <MutedMetadata className="text-sm font-semibold">
+        {formatDate(date)}
+      </MutedMetadata>
+
+      <RouteTimeline flight={flight} />
+
+      <div className="flex flex-col items-end gap-2">
+        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+        <div className="flex items-center gap-2">
+          <SelectAction flight={flight} />
+          {expandBtn}
+        </div>
+      </div>
+
+      <div className="md:col-start-3">
+        <FlightMeta flight={flight} badges={badges} />
+      </div>
+    </div>
+  );
+}
+
 const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
   flight: Flight,
   date: string,
@@ -166,57 +224,9 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
   badges?: string[],
 }) => {
   return (
-    <ResultCard
-      className={cn(
-        'grid gap-4 p-4 md:grid-cols-[minmax(112px,0.9fr)_minmax(76px,0.55fr)_minmax(260px,2.1fr)_minmax(132px,0.85fr)] md:items-center',
-        isSubResult && 'bg-surface-field shadow-none'
-      )}
-    >
-      <div className="flex items-center justify-between gap-4 md:hidden">
-        <AirlineMark airline={flight.airline} />
-        <div className="flex items-center gap-3 text-right">
-          <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
-          {expandBtn}
-        </div>
-      </div>
-
-      <div className="hidden md:flex md:items-center">
-        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
-      </div>
-
-      <MutedMetadata className="hidden text-sm font-semibold md:block">
-        {formatDate(date)}
-      </MutedMetadata>
-
-      <div className="space-y-3">
-        <RouteTimeline flight={flight} />
-        <div className="md:hidden">
-          <FlightMeta flight={flight} badges={badges} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 md:hidden">
-        <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
-          </div>
-          <SelectAction flight={flight} />
-          {expandBtn}
-        </div>
-      </div>
-
-      <div className="hidden md:flex md:flex-col md:items-end md:gap-2">
-        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
-        <div className="flex items-center gap-2">
-          <SelectAction flight={flight} />
-          {expandBtn}
-        </div>
-      </div>
-
-      <div className="hidden md:col-start-3 md:block">
-        <FlightMeta flight={flight} badges={badges} />
-      </div>
+    <ResultCard className={cn('p-4', isSubResult && 'bg-surface-field shadow-none')}>
+      <FlightCardMobile flight={flight} date={date} expandBtn={expandBtn} badges={badges} />
+      <FlightCardDesktop flight={flight} date={date} expandBtn={expandBtn} badges={badges} />
     </ResultCard>
   );
 };
@@ -252,11 +262,11 @@ export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
         badges={getBadges(combo.flights[0])}
         expandBtn={others.length > 0 && (
           <button
-            className="group inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-field px-2.5 py-1 text-xs font-bold text-copy-strong transition-colors hover:bg-brand-soft"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-field px-2.5 py-1.5 text-xs font-bold text-copy-strong transition-colors hover:bg-brand-soft md:py-1"
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
           >
-            <span className="hidden sm:inline">{expanded ? 'Hide' : `${others.length} more`}</span>
+            <span>{expanded ? 'Hide' : `${others.length} more`}</span>
             <ChevronDown
               className={`size-4 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
               aria-hidden="true"
