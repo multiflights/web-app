@@ -66,7 +66,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
           numberOfMonths={isDesktop ? 2 : 1}
           showOutsideDays={false}
           disabled={{ before: new Date() }}
-          className="[--cell-size:--spacing(11)] md:[--cell-size:--spacing(18)]"
+          className="[--cell-size:--spacing(10)] md:[--cell-size:--spacing(9)]"
         />
       </PopoverContent>
     </Popover>
