@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/base/popover";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/base/dialog";
 import { Calendar } from "@/components/base/calendar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
@@ -45,29 +46,52 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       : format(selected.from, "MMM d, yyyy")
     : "Pick a date range";
 
+  const triggerClassName = cn(
+    "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
+    "focus:border-brand focus:ring-4 focus:ring-brand-soft",
+    !selected?.from && "text-muted-foreground",
+    className
+  );
+
+  const triggerContent = (
+    <>
+      <CalendarIcon className="size-4 shrink-0 opacity-60" />
+      <span className="truncate">{label}</span>
+    </>
+  );
+
+  const calendar = (
+    <Calendar
+      mode="range"
+      selected={selected}
+      onSelect={handleSelect}
+      numberOfMonths={isDesktop ? 2 : 1}
+      showOutsideDays={false}
+      disabled={{ before: new Date() }}
+      className="[--cell-size:--spacing(9)]"
+    />
+  );
+
+  // On mobile a popover anchored to the trigger can flip above the field and
+  // overflow the top of the screen (hiding the month-nav arrows) when a month
+  // needs a sixth week row. A viewport-centered dialog is immune to that.
+  if (!isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
+        <DialogContent className="flex w-fit max-w-[calc(100vw-1.5rem)] max-h-[90vh] items-center justify-center overflow-auto p-3">
+          <DialogTitle className="sr-only">Select a date range</DialogTitle>
+          {calendar}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
-          "focus:border-brand focus:ring-4 focus:ring-brand-soft",
-          !selected?.from && "text-muted-foreground",
-          className
-        )}
-      >
-        <CalendarIcon className="size-4 shrink-0 opacity-60" />
-        <span className="truncate">{label}</span>
-      </PopoverTrigger>
+      <PopoverTrigger className={triggerClassName}>{triggerContent}</PopoverTrigger>
       <PopoverContent className="w-auto max-w-[calc(100vw-1rem)] p-4" align="center">
-        <Calendar
-          mode="range"
-          selected={selected}
-          onSelect={handleSelect}
-          numberOfMonths={isDesktop ? 2 : 1}
-          showOutsideDays={false}
-          disabled={{ before: new Date() }}
-          className="[--cell-size:--spacing(10)] md:[--cell-size:--spacing(9)]"
-        />
+        {calendar}
       </PopoverContent>
     </Popover>
   );
