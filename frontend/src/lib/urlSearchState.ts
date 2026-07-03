@@ -36,6 +36,25 @@ export function buildSearchParams({ origins, destinations, dates }: SearchInputS
 }
 
 /**
+ * True when a string is a real, parseable calendar date. Parsed the same way the
+ * date picker parses stored values, so anything that would make the picker choke
+ * (e.g. letters, or a partial value like "2026") is rejected here.
+ */
+export function isValidDateParam(value: string): boolean {
+  return value !== '' && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+}
+
+/**
+ * Drops any date that is not a real calendar date, leaving that field empty.
+ */
+export function sanitizeDates(dates: SearchInputState['dates']): SearchInputState['dates'] {
+  return {
+    start: isValidDateParam(dates.start) ? dates.start : '',
+    end: isValidDateParam(dates.end) ? dates.end : '',
+  };
+}
+
+/**
  * True when the URL carries any search-related parameter at all. Because the
  * URL is only written when a search is triggered, this doubles as "a search was
  * committed at some point" — even if the committed search was incomplete.

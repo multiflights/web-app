@@ -12,6 +12,7 @@ import {
   hasAnySearchParam,
   isCompleteSearch,
   parseSearchParams,
+  sanitizeDates,
   type SearchInputState,
 } from './lib/urlSearchState';
 import { loadDraftInputs, saveDraftInputs } from './lib/draftStorage';
@@ -26,17 +27,25 @@ import './styles/globals.css';
  *    is ignored, so a refresh always resets the fields to the last search.
  *  - If the URL is empty, no search has ever been committed, so we restore the
  *    draft the user was typing before the refresh.
+ *
+ * Either way we sanitize the dates up front so a hand-edited, unparseable date in
+ * the URL can never reach (and crash) the date picker. Airport codes can only be
+ * validated once the airport list has loaded, which happens in a later effect.
  */
 function getInitialInputs(): SearchInputState {
   const fromUrl = parseSearchParams(window.location.search);
-  return hasAnySearchParam(fromUrl) ? fromUrl : loadDraftInputs();
+  const inputs = hasAnySearchParam(fromUrl) ? fromUrl : loadDraftInputs();
+  return { ...inputs, dates: sanitizeDates(inputs.dates) };
 }
 
 export default function App() {
-  const { allAirports } = useAirports();
+  const { allAirports, loading: airportsLoading } = useAirports();
   const [origins, setOrigins] = useState<string[]>(() => getInitialInputs().origins);
   const [destinations, setDestinations] = useState<string[]>(() => getInitialInputs().destinations);
   const [dates, setDates] = useState(() => getInitialInputs().dates);
+  // Whether this page load started from a committed search in the URL. Captured
+  // once up front because validation may later strip the URL back to empty.
+  const startedFromUrl = useRef(hasAnySearchParam(parseSearchParams(window.location.search)));
   const [results, setResults] = useState<FlightSearchResult[]>([]);
   const [status, setStatus] = useState<SearchStatus>({
     variant: 'neutral',
@@ -63,9 +72,11 @@ export default function App() {
   };
 
   /**
-   * Execution logic for the flight search
+   * Execution logic for the flight search. Operates on an explicit set of inputs
+   * so it can be driven both by the Search button (current fields) and by the
+   * on-load auto-refetch (the validated URL params).
    */
-  const handleSearch = async () => {
+  const runSearch = async ({ origins, destinations, dates }: SearchInputState) => {
     const departureDates = getDatesInRange(dates.start, dates.end);
 
 
@@ -145,6 +156,8 @@ export default function App() {
     }
   };
 
+  const handleSearch = () => runSearch({ origins, destinations, dates });
+
   /**
    * Swap the departure and arrival airport lists.
    */
@@ -160,18 +173,44 @@ export default function App() {
     saveDraftInputs({ origins, destinations, dates });
   }, [origins, destinations, dates]);
 
-  const hasAutoSearched = useRef(false);
+  // Once the airport list is available we can validate the airport codes that
+  // came from the URL, dropping any that aren't real airports (leaving the field
+  // empty) — mirroring how invalid dates are already dropped at init. Only then
+  // do we know whether a committed search is still complete enough to replay.
+  const hasValidatedInputs = useRef(false);
   useEffect(() => {
-    if (hasAutoSearched.current) return;
-    hasAutoSearched.current = true;
-    // A complete set of URL params means a real search was committed before the
-    // reload, so replay it. Incomplete or absent params leave the initial,
-    // pre-search view untouched and never trigger a fetch.
-    if (isCompleteSearch(parseSearchParams(window.location.search))) {
-      handleSearch();
+    if (airportsLoading || hasValidatedInputs.current) return;
+    hasValidatedInputs.current = true;
+
+    // Only the URL is an untrusted source. Draft inputs come from in-app airport
+    // selections, so there is nothing to validate (and re-applying them here
+    // could clobber edits the user made while the airport list was still loading).
+    if (!startedFromUrl.current) return;
+
+    const validCodes = new Set(allAirports.map(airport => airport.iata));
+    const cleaned: SearchInputState = {
+      origins: origins.filter(code => validCodes.has(code)),
+      destinations: destinations.filter(code => validCodes.has(code)),
+      dates, // already sanitized at init
+    };
+
+    setOrigins(cleaned.origins);
+    setDestinations(cleaned.destinations);
+
+    // Drop any invalid params from the URL too, so it matches the cleaned inputs.
+    window.history.replaceState(
+      null,
+      '',
+      buildSearchParams(cleaned) || window.location.pathname
+    );
+
+    // Replay the committed search only if what survived validation is still a
+    // complete, runnable search. Otherwise the pre-search view (no results) stays.
+    if (isCompleteSearch(cleaned)) {
+      runSearch(cleaned);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [airportsLoading, allAirports]);
 
   return (
     <PageShell>

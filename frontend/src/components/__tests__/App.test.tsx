@@ -46,6 +46,13 @@ const searchCalls = () =>
     String(input).includes('/search')
   );
 
+const airports = [
+  { iata: 'JFK', name: 'John F Kennedy' },
+  { iata: 'LAX', name: 'Los Angeles' },
+  { iata: 'ORD', name: "Chicago O'Hare" },
+  { iata: 'SFO', name: 'San Francisco' },
+];
+
 describe('App URL-synced search state', () => {
   beforeEach(() => {
     setUrl('/');
@@ -55,7 +62,7 @@ describe('App URL-synced search state', () => {
       vi.fn((input: RequestInfo | URL) => {
         const url = typeof input === 'string' ? input : input.toString();
         if (url.includes('/airports.json')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
+          return Promise.resolve({ ok: true, json: () => Promise.resolve(airports) } as Response);
         }
         if (url.includes('/search')) {
           return Promise.resolve({ ok: true, json: () => Promise.resolve(flightResults) } as Response);
@@ -171,5 +178,51 @@ describe('App URL-synced search state', () => {
       expect(window.location.search).toContain('origins=LAX');
       expect(window.location.search).toContain('destinations=JFK');
     });
+  });
+
+  it('drops an unknown airport code from the URL but keeps the valid ones', async () => {
+    setUrl('/?origins=JFK,ZZZ&destinations=LAX&start=2026-06-01&end=2026-06-01');
+
+    render(<App />);
+
+    // The surviving route (JFK only) is still complete, so it is searched...
+    await screen.findByText('1 route option found');
+
+    const lastSearch = searchCalls().at(-1)!;
+    const body = JSON.parse((lastSearch[1] as RequestInit).body as string);
+    expect(body.origins).toEqual(['JFK']);
+
+    // ...and the invalid code has been scrubbed from the URL.
+    expect(window.location.search).toContain('origins=JFK');
+    expect(window.location.search).not.toContain('ZZZ');
+  });
+
+  it('clears the search when the only origin is an invalid airport code', async () => {
+    setUrl('/?origins=ZZZ&destinations=LAX&start=2026-06-01&end=2026-06-01');
+
+    render(<App />);
+
+    // Origins becomes empty, so the search is no longer runnable: no fetch, no
+    // results, and the invalid origin is dropped from the URL entirely.
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('origins');
+    });
+    expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
+    expect(searchCalls()).toHaveLength(0);
+  });
+
+  it('drops an unparseable date and does not search or crash', async () => {
+    setUrl('/?origins=JFK&destinations=LAX&start=not-a-date');
+
+    render(<App />);
+
+    // The corrupt date is dropped, leaving an incomplete search: the page renders
+    // normally (no crash), shows the empty date picker, and never fetches.
+    expect(await screen.findByText('Pick a date range')).toBeInTheDocument();
+    expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(searchCalls()).toHaveLength(0);
+    });
+    expect(window.location.search).not.toContain('start');
   });
 });

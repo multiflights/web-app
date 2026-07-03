@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSearchParams, parseSearchParams } from '../urlSearchState';
+import {
+  buildSearchParams,
+  isValidDateParam,
+  parseSearchParams,
+  sanitizeDates,
+} from '../urlSearchState';
 
 describe('urlSearchState', () => {
   it('parses origins, destinations, and dates from a query string', () => {
@@ -50,6 +55,24 @@ describe('urlSearchState', () => {
     const query = buildSearchParams({ origins: [], destinations: [], dates: { start: '', end: '' } });
 
     expect(query).toBe('');
+  });
+
+  it('accepts real calendar dates and rejects empty or unparseable ones', () => {
+    expect(isValidDateParam('2026-06-01')).toBe(true);
+    expect(isValidDateParam('')).toBe(false);
+    expect(isValidDateParam('not-a-date')).toBe(false);
+    expect(isValidDateParam('june first')).toBe(false);
+  });
+
+  it('sanitizes a date range by dropping only the invalid endpoints', () => {
+    expect(sanitizeDates({ start: '2026-06-01', end: 'garbage' })).toEqual({
+      start: '2026-06-01',
+      end: '',
+    });
+    expect(sanitizeDates({ start: 'garbage', end: '2026-06-05' })).toEqual({
+      start: '',
+      end: '2026-06-05',
+    });
   });
 
   it('round-trips through parse and build', () => {
