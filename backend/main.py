@@ -1,6 +1,7 @@
 import asyncio
 import html
 import os
+import warnings
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from pathlib import Path
@@ -23,6 +24,15 @@ SERPAPI_TIMEOUT_SECONDS = 20
 SERPAPI_FLIGHT_LIMIT = 5
 
 
+class MissingConfigurationWarning(UserWarning):
+    """Emitted when required configuration is absent.
+
+    Emitted (not raised) so the server still starts, but callers can catch or
+    escalate it, e.g. ``warnings.simplefilter("error", MissingConfigurationWarning)``
+    to turn it into a hard startup failure later.
+    """
+
+
 def load_environment_file() -> None:
     """Load local backend env values without overriding shell-provided config."""
     env_path = Path(__file__).with_name("environment.env")
@@ -36,6 +46,10 @@ def load_environment_file() -> None:
 
         key, value = line.split("=", 1)
         key = key.strip()
+        # Tolerate shell-style `export KEY=value` lines so the key name does not
+        # end up as the literal "export KEY".
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
         value = value.strip().strip('"').strip("'")
 
         if key:
@@ -70,6 +84,13 @@ load_environment_file()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not os.environ.get("SERPAPI_KEY"):
+        warnings.warn(
+            "SERPAPI_KEY is not set. Flight searches will return HTTP 500 until it "
+            "is configured in backend/environment.env or exported in the environment.",
+            MissingConfigurationWarning,
+            stacklevel=2,
+        )
     cleanup_task = asyncio.create_task(cache_cleaner())
     yield
 
@@ -389,6 +410,11 @@ async def fetch_single_route(origin: str, dest: str, dt_str: str, route: FlightR
 
 @app.post("/search")
 async def search_flights(query: FlightSearchQuery):
+    if not os.environ.get("SERPAPI_KEY"):
+        raise HTTPException(
+            status_code=500,
+            detail="SERPAPI_KEY is not configured on the server.",
+        )
     try:
         tasks = []
         results = []
@@ -413,6 +439,8 @@ async def search_flights(query: FlightSearchQuery):
         results.sort(key=lambda result: result["flights"][0]["price"])
         return results[:6]
 
+    except HTTPException:
+        raise
     except Exception as error:
         print(f"Error: {error}")
         raise HTTPException(status_code=500, detail=str(error))

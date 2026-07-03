@@ -21,7 +21,9 @@ cp environment.env.example environment.env
 SERPAPI_KEY=your_api_key
 ```
 
-The backend automatically loads `backend/environment.env` for local development. Values already exported in your shell take priority over values in the file.
+The backend automatically loads `backend/environment.env` for local development. Values already exported in your shell take priority over values in the file. `export KEY=value` lines are also accepted.
+
+`SERPAPI_KEY` is required. If it is missing, the backend emits a `MissingConfigurationWarning` (via Python's `warnings` module) on startup and `/search` returns HTTP 500 (rather than silently returning an empty result list). Because it is a real warning, it can be caught in tests or escalated to a hard startup failure with `warnings.simplefilter("error", MissingConfigurationWarning)`. The legacy `AMADEUS_*` variables are deprecated and no longer read.
 
 ## Notes
 
