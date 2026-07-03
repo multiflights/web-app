@@ -62,6 +62,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
           selected={selected}
           onSelect={handleSelect}
           numberOfMonths={2}
+          showOutsideDays={false}
           disabled={{ before: new Date() }}
           className="[--cell-size:--spacing(18)]"
         />
