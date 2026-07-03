@@ -8,6 +8,7 @@ import type {FlightSearchResult} from './types/flight-search-result';
 import type {FlightSearchQuery} from './types/flight-search-query';
 import { config } from './config';
 import { buildSearchParams, parseSearchParams } from './lib/urlSearchState';
+import { loadStoredResults, saveStoredResults } from './lib/resultsStorage';
 import './styles/globals.css';
 
 export default function App() {
@@ -15,7 +16,7 @@ export default function App() {
   const [origins, setOrigins] = useState<string[]>(() => parseSearchParams(window.location.search).origins);
   const [destinations, setDestinations] = useState<string[]>(() => parseSearchParams(window.location.search).destinations);
   const [dates, setDates] = useState(() => parseSearchParams(window.location.search).dates);
-  const [results, setResults] = useState<FlightSearchResult[]>([]);
+  const [results, setResults] = useState<FlightSearchResult[]>(() => loadStoredResults());
   const [status, setStatus] = useState<SearchStatus>({
     variant: 'neutral',
     message: 'Enter a route to search.',
@@ -118,11 +119,24 @@ export default function App() {
     window.history.replaceState(null, '', query || window.location.pathname);
   }, [origins, destinations, dates]);
 
+  useEffect(() => {
+    saveStoredResults(results);
+  }, [results]);
+
   const hasAutoSearched = useRef(false);
   useEffect(() => {
     if (hasAutoSearched.current) return;
     hasAutoSearched.current = true;
-    if (origins.length > 0 && destinations.length > 0 && dates.start && dates.end) {
+    // Only auto-refetch on load when a previous search produced results.
+    // Otherwise a page with fully populated inputs (but no prior search)
+    // would trigger an unwanted search on refresh.
+    if (
+      results.length > 0 &&
+      origins.length > 0 &&
+      destinations.length > 0 &&
+      dates.start &&
+      dates.end
+    ) {
       handleSearch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
