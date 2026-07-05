@@ -11,12 +11,15 @@ import type { Airport } from '../../types/airport';
 import type { FlightSearchResult } from '../../types/flight-search-result';
 
 // PageShell and ResultsPanel consume the currency context. Seeding a fresh
-// cached rate table keeps the provider from fetching live rates in tests.
+// cached rate table keeps the provider from fetching live rates in tests, and
+// pinning the currency preference to USD keeps price assertions independent of
+// the machine's time zone (which otherwise drives the default currency).
 const seedFxRates = () => {
   window.localStorage.setItem(
     'flight-search:fx-rates',
     JSON.stringify({ date: '2026-07-03', rates: { EUR: 0.9 }, fetchedAt: Date.now() })
   );
+  window.localStorage.setItem('flight-search:currency', 'USD');
 };
 
 const renderWithCurrency = (ui: ReactElement) =>
