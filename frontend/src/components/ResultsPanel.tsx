@@ -1,12 +1,15 @@
 import { FlightGroup } from './FlightResults';
 import { FieldContainer, MutedMetadata, PanelContainer } from './base/surface';
 import type { FlightSearchResult } from '../types/flight-search-result';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface ResultsPanelProps {
   results: FlightSearchResult[];
 }
 
 export function ResultsPanel({ results }: ResultsPanelProps) {
+  const { currency, rates } = useCurrency();
+  const showConversionNote = results.length > 0 && currency !== 'USD' && rates !== null;
   return (
     <PanelContainer className="mt-3.5 relative z-1">
       <div className="flex justify-between items-baseline mb-2.5">
@@ -26,6 +29,13 @@ export function ResultsPanel({ results }: ResultsPanelProps) {
           </FieldContainer>
         )}
       </div>
+
+      {showConversionNote && (
+        <MutedMetadata className="mt-2.5 block">
+          Prices converted from USD at the ECB reference rate of {rates.date}. The booking
+          site determines the final price and currency.
+        </MutedMetadata>
+      )}
     </PanelContainer>
   );
 }

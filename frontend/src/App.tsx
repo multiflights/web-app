@@ -16,6 +16,7 @@ import {
   type SearchInputState,
 } from './lib/urlSearchState';
 import { loadDraftInputs, saveDraftInputs } from './lib/draftStorage';
+import { CurrencyProvider } from './hooks/useCurrency';
 import './styles/globals.css';
 
 /**
@@ -213,21 +214,23 @@ export default function App() {
   }, [airportsLoading, allAirports]);
 
   return (
-    <PageShell>
-      <SearchPanel
-        allAirports={allAirports}
-        origins={origins}
-        destinations={destinations}
-        dates={dates}
-        loading={loading}
-        status={status}
-        onOriginsChange={setOrigins}
-        onDestinationsChange={setDestinations}
-        onSwap={handleSwap}
-        onDatesChange={setDates}
-        onSearch={handleSearch}
-      />
-      <ResultsPanel results={results} />
-    </PageShell>
+    <CurrencyProvider>
+      <PageShell>
+        <SearchPanel
+          allAirports={allAirports}
+          origins={origins}
+          destinations={destinations}
+          dates={dates}
+          loading={loading}
+          status={status}
+          onOriginsChange={setOrigins}
+          onDestinationsChange={setDestinations}
+          onSwap={handleSwap}
+          onDatesChange={setDates}
+          onSearch={handleSearch}
+        />
+        <ResultsPanel results={results} />
+      </PageShell>
+    </CurrencyProvider>
   );
 }

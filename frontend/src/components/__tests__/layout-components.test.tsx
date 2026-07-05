@@ -1,12 +1,26 @@
+import type { ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PageShell } from '../PageShell';
 import { ResultsPanel } from '../ResultsPanel';
 import { SearchPanel } from '../SearchPanel';
 import { StatusMessage } from '../StatusMessage';
+import { CurrencyProvider } from '../../hooks/useCurrency';
 import type { Airport } from '../../types/airport';
 import type { FlightSearchResult } from '../../types/flight-search-result';
+
+// PageShell and ResultsPanel consume the currency context. Seeding a fresh
+// cached rate table keeps the provider from fetching live rates in tests.
+const seedFxRates = () => {
+  window.localStorage.setItem(
+    'flight-search:fx-rates',
+    JSON.stringify({ date: '2026-07-03', rates: { EUR: 0.9 }, fetchedAt: Date.now() })
+  );
+};
+
+const renderWithCurrency = (ui: ReactElement) =>
+  render(<CurrencyProvider>{ui}</CurrencyProvider>);
 
 const airports: Airport[] = [
   { iata: 'JFK', label: 'JFK - New York', text: 'jfk new york john f kennedy' },
@@ -39,8 +53,16 @@ const flightResults: FlightSearchResult[] = [
 ];
 
 describe('layout components', () => {
+  beforeEach(() => {
+    seedFxRates();
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
   it('renders the page shell title and children', () => {
-    render(<PageShell><p>Search content</p></PageShell>);
+    renderWithCurrency(<PageShell><p>Search content</p></PageShell>);
 
     expect(screen.getByRole('heading', { name: 'Flight Tracker' })).toBeInTheDocument();
     expect(screen.getByText('Search content')).toBeInTheDocument();
@@ -112,14 +134,14 @@ describe('layout components', () => {
   });
 
   it('shows an empty results state', () => {
-    render(<ResultsPanel results={[]} />);
+    renderWithCurrency(<ResultsPanel results={[]} />);
 
     expect(screen.getByRole('heading', { name: 'Results' })).toBeInTheDocument();
     expect(screen.getByText('No results yet.')).toBeInTheDocument();
   });
 
   it('renders flight result details', () => {
-    render(<ResultsPanel results={flightResults} />);
+    renderWithCurrency(<ResultsPanel results={flightResults} />);
 
     expect(screen.getByText('JFK → LAX · Jun 12')).toBeInTheDocument();
     expect(screen.getAllByText('Best price').length).toBeGreaterThan(0);
@@ -135,7 +157,7 @@ describe('layout components', () => {
   });
 
   it('renders airline and price exactly once in each card layout variant', () => {
-    render(<ResultsPanel results={flightResults} />);
+    renderWithCurrency(<ResultsPanel results={flightResults} />);
 
     // Each card renders one mobile and one desktop layout; neither may
     // duplicate the airline mark or the price within itself.

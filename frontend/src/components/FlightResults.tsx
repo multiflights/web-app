@@ -5,6 +5,7 @@ import { MutedMetadata, PrimaryActionButton, ResultCard } from './base/surface';
 import { buttonVariants } from './base/button';
 import { cn } from '@/lib/utils';
 import { config } from '../config';
+import { useCurrency } from '../hooks/useCurrency';
 
 const fmtDuration = (min: number): string =>
   `${Math.floor(min / 60)}h ${min % 60}m`;
@@ -168,11 +169,12 @@ interface FlightCardLayoutProps {
 
 // Mobile (< md): stacked rows — airline + price, route, chips, actions.
 function FlightCardMobile({ flight, expandBtn, badges }: FlightCardLayoutProps) {
+  const { format } = useCurrency();
   return (
     <div className="flex flex-col gap-3 md:hidden">
       <div className="flex items-center justify-between gap-4">
         <AirlineMark airline={flight.airline} airlineLogoUrl={flight.airline_logo_url} />
-        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+        <span className="text-2xl font-black text-brand">{format(flight.price)}</span>
       </div>
 
       <RouteTimeline flight={flight} />
@@ -189,6 +191,7 @@ function FlightCardMobile({ flight, expandBtn, badges }: FlightCardLayoutProps) 
 
 // Desktop (>= md): single grid row — airline | date | route + chips | price + actions.
 function FlightCardDesktop({ flight, date, expandBtn, badges }: FlightCardLayoutProps) {
+  const { format } = useCurrency();
   return (
     <div className="hidden gap-4 md:grid md:grid-cols-[minmax(112px,0.9fr)_minmax(76px,0.55fr)_minmax(260px,2.1fr)_minmax(132px,0.85fr)] md:items-center">
       <div className="flex items-center">
@@ -202,7 +205,7 @@ function FlightCardDesktop({ flight, date, expandBtn, badges }: FlightCardLayout
       <RouteTimeline flight={flight} />
 
       <div className="flex flex-col items-end gap-2">
-        <span className="text-2xl font-black text-brand">${flight.price.toFixed(0)}</span>
+        <span className="text-2xl font-black text-brand">{format(flight.price)}</span>
         <div className="flex items-center gap-2">
           <SelectAction flight={flight} />
           {expandBtn}
@@ -232,6 +235,7 @@ const FlightCard = ({ flight, date, isSubResult, expandBtn, badges = [] }: {
 };
 
 export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
+  const { format } = useCurrency();
   const [expanded, setExpanded] = useState(false);
   const others = combo.flights.slice(1, 5);
   const bestPrice = Math.min(...combo.flights.map(flight => flight.price));
@@ -253,7 +257,7 @@ export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
             {combo.flights.length} option{combo.flights.length === 1 ? '' : 's'} ranked by price
           </MutedMetadata>
         </div>
-        <ResultChip tone="brand">From ${bestPrice.toFixed(0)}</ResultChip>
+        <ResultChip tone="brand">From {format(bestPrice)}</ResultChip>
       </div>
 
       <FlightCard
