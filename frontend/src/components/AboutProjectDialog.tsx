@@ -1,4 +1,4 @@
-import { CalendarRange, Coffee, GitCompareArrows, MapPin, Sparkles } from 'lucide-react';
+import { Coffee, Sparkles } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,24 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './base/dialog';
-
-const projectHighlights = [
-  {
-    icon: MapPin,
-    title: 'Multiple airports',
-    description: 'Explore every practical origin and destination.',
-  },
-  {
-    icon: CalendarRange,
-    title: 'Flexible dates',
-    description: 'Compare a range instead of searching day by day.',
-  },
-  {
-    icon: GitCompareArrows,
-    title: 'One clear view',
-    description: 'Bring routes, schedules, and prices together.',
-  },
-];
 
 export function AboutProjectDialog() {
   return (
@@ -38,8 +20,8 @@ export function AboutProjectDialog() {
         <span className="relative whitespace-nowrap">About this project</span>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto border border-surface-border bg-surface-panel p-0 shadow-[0_28px_90px_rgba(13,43,63,0.24)] backdrop-blur-2xl sm:max-w-[900px]">
-        <div className="relative overflow-hidden px-5 py-7 sm:px-8">
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] gap-0 overflow-y-auto border border-surface-border bg-surface-panel p-0 shadow-[0_28px_90px_rgba(13,43,63,0.24)] backdrop-blur-2xl sm:max-w-[820px]">
+        <div className="relative overflow-hidden px-5 py-8 sm:px-8">
           <div
             aria-hidden="true"
             className="absolute -right-20 -top-24 size-64 rounded-full bg-brand-bright/25 blur-3xl"
@@ -53,7 +35,7 @@ export function AboutProjectDialog() {
             className="absolute right-[20%] top-[53px] size-2 rounded-full border-2 border-brand bg-surface-panel shadow-[0_0_0_5px_var(--brand-soft)]"
           />
 
-          <DialogHeader className="relative grid gap-5 pr-8 md:grid-cols-[0.9fr_1.1fr] md:gap-10">
+          <DialogHeader className="relative grid gap-6 pr-8 md:grid-cols-[0.9fr_1.1fr] md:gap-x-9">
             <div>
               <p className="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
                 Built for flexible travelers
@@ -71,33 +53,18 @@ export function AboutProjectDialog() {
               </DialogDescription>
               <p className="m-0 text-[14px] leading-relaxed text-copy-muted sm:text-[15px]">
                 Flight Search Engine brings those combinations into one place,
-                making it easier to find an affordable itinerary that fits the trip.
+                making it easier to find an affordable itinerary that fits the
+                trip. We hope it makes planning your next trip a little easier.
+                Enjoy!
               </p>
-              <div className="border-l-2 border-brand/35 pl-3">
-                <p className="m-0 text-[13px] italic leading-relaxed text-copy-muted">
-                  We hope it makes planning your next trip a little easier. Enjoy!
-                </p>
-                <p className="mb-0 mt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-copy-strong">
-                  Owen Wild, Richard Kirsch &amp; Timothy Kugler
-                </p>
-              </div>
+              <p className="m-0 text-xs font-semibold text-copy-strong">
+                — Owen Wild, Richard Kirsch &amp; Timothy Kugler
+              </p>
             </div>
           </DialogHeader>
         </div>
 
-        <div className="grid gap-px border-y border-surface-border bg-surface-border sm:grid-cols-3">
-          {projectHighlights.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="bg-surface-panel px-5 py-4">
-              <Icon className="mb-3 size-4 text-brand" aria-hidden="true" />
-              <h3 className="m-0 text-sm font-bold text-copy-strong">{title}</h3>
-              <p className="mb-0 mt-1 text-xs leading-relaxed text-copy-muted">
-                {description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-4 bg-brand-soft/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="flex flex-col gap-4 border-t border-surface-border bg-brand-soft/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="flex items-start gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-panel text-brand shadow-sm">
               <Coffee className="size-4.5" aria-hidden="true" />

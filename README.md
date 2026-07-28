@@ -6,11 +6,9 @@ A web application for comparing flights across multiple airports and travel date
 
 We like to explore every viable route and date before booking a trip. When several airports and dates are in play, that can mean juggling dozens of tabs and side-by-side searches.
 
-We built Flight Search Engine to bring those combinations into one place, making it easier to find an affordable itinerary that fits the trip.
+We built Flight Search Engine to bring those combinations into one place, making it easier to find an affordable itinerary that fits the trip. We hope it makes planning your next trip a little easier. Enjoy!
 
-> We hope it makes planning your next trip a little easier. Enjoy!
->
-> — Owen Wild, Richard Kirsch & Timothy Kugler
+— Owen Wild, Richard Kirsch & Timothy Kugler
 
 ## Support the Project
 
