@@ -8,6 +8,12 @@ We like to explore every viable route and date before booking a trip. When sever
 
 We built Flight Search Engine to bring those combinations into one place, making it easier to find an affordable itinerary that fits the trip.
 
+## Support the Project
+
+<!-- TODO: Replace this placeholder with a linked Buy Me a Coffee button once the account URL is available. -->
+
+_Buy us a coffee link coming soon._
+
 ## Features
 
 - Search combinations of multiple origin and destination airports.
@@ -79,9 +85,3 @@ Subsequent pushes to `main` deploy only the affected service:
 - Changes under `frontend/` trigger the frontend deployment directly.
 
 Both workflows can also be started manually with **Run workflow**.
-
-## Support the Project
-
-<!-- TODO: Replace this placeholder with a linked Buy Me a Coffee button once the account URL is available. -->
-
-_Buy us a coffee link coming soon._
