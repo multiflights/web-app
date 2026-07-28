@@ -67,8 +67,20 @@ describe('layout components', () => {
   it('renders the page shell title and children', () => {
     renderWithCurrency(<PageShell><p>Search content</p></PageShell>);
 
-    expect(screen.getByRole('heading', { name: 'Flight Tracker' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Flight Search Engine', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'About this project' })).toBeInTheDocument();
     expect(screen.getByText('Search content')).toBeInTheDocument();
+  });
+
+  it('opens the project story from the page shell', async () => {
+    renderWithCurrency(<PageShell><p>Search content</p></PageShell>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'About this project' }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Fewer tabs. More ways to get there.' })).toBeInTheDocument();
+    expect(screen.getByText(/juggling dozens of tabs/i)).toBeInTheDocument();
+    expect(screen.getByText('Coffee link coming soon')).toBeInTheDocument();
   });
 
   it('renders status text using muted metadata styling', () => {
