@@ -73,6 +73,14 @@ export function AboutProjectDialog() {
                 Flight Search Engine brings those combinations into one place,
                 making it easier to find an affordable itinerary that fits the trip.
               </p>
+              <div className="border-l-2 border-brand/35 pl-3">
+                <p className="m-0 text-[13px] italic leading-relaxed text-copy-muted">
+                  We hope it makes planning your next trip a little easier. Enjoy!
+                </p>
+                <p className="mb-0 mt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-copy-strong">
+                  Owen Wild, Richard Kirsch &amp; Timothy Kugler
+                </p>
+              </div>
             </div>
           </DialogHeader>
         </div>

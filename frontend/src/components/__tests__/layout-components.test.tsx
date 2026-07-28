@@ -80,6 +80,7 @@ describe('layout components', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Fewer tabs. More ways to get there.' })).toBeInTheDocument();
     expect(screen.getByText(/juggling dozens of tabs/i)).toBeInTheDocument();
+    expect(screen.getByText('Owen Wild, Richard Kirsch & Timothy Kugler')).toBeInTheDocument();
     expect(screen.getByText('Coffee link coming soon')).toBeInTheDocument();
   });
 
