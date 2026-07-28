@@ -6,6 +6,7 @@ const emptyDraft = (): SearchInputState => ({
   origins: [],
   destinations: [],
   dates: { start: '', end: '' },
+  returnDates: { start: '', end: '' },
 });
 
 const asStringArray = (value: unknown): string[] =>
@@ -17,14 +18,19 @@ const asStringArray = (value: unknown): string[] =>
  */
 function normalizeDraft(value: unknown): SearchInputState {
   if (!value || typeof value !== 'object') return emptyDraft();
-  const { origins, destinations, dates } = value as Record<string, unknown>;
+  const { origins, destinations, dates, returnDates } = value as Record<string, unknown>;
   const { start, end } = (dates ?? {}) as Record<string, unknown>;
+  const { start: returnStart, end: returnEnd } = (returnDates ?? {}) as Record<string, unknown>;
   return {
     origins: asStringArray(origins),
     destinations: asStringArray(destinations),
     dates: {
       start: typeof start === 'string' ? start : '',
       end: typeof end === 'string' ? end : '',
+    },
+    returnDates: {
+      start: typeof returnStart === 'string' ? returnStart : '',
+      end: typeof returnEnd === 'string' ? returnEnd : '',
     },
   };
 }

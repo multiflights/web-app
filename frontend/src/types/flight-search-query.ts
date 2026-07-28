@@ -7,4 +7,7 @@ export interface FlightSearchQuery {
 
   /** List of dates of departure in YYYY-MM-DD format */
   departure_dates: string[];
+
+  /** Optional list of return dates in YYYY-MM-DD format */
+  return_dates?: string[];
 }

@@ -40,4 +40,19 @@ describe('DateRangePicker', () => {
 
     expect(await screen.findAllByRole('grid')).toHaveLength(1);
   });
+
+  it('uses a distinct accessible label and placeholder for a return range', () => {
+    mockViewport({ isDesktop: true });
+    render(
+      <DateRangePicker
+        value={{ start: '', end: '' }}
+        onChange={vi.fn()}
+        label="Select return date range"
+        placeholder="Return date range"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Select return date range' }))
+      .toHaveTextContent('Return date range');
+  });
 });

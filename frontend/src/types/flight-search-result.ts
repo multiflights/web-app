@@ -17,6 +17,7 @@ export interface Flight {
   airline_logo_url?: string | null;
   price: number;
   segments: FlightSegment[];
+  return_segments?: FlightSegment[] | null;
   duration_minutes: number;
   booking_url?: string | null;
   booking_request?: BookingRequest | null;
@@ -27,6 +28,7 @@ export interface FlightSearchResult {
    * Contains all flight results for a specific (date, origin, destination) combination 
    */
   date: string;
+  return_date?: string | null;
   origin: string;
   destination: string;
   flights: Flight[];

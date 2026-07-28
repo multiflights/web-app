@@ -1,4 +1,4 @@
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, X } from 'lucide-react';
 import { AirportInput } from './AirportInput';
 import { DateRangePicker } from './DateRangePicker';
 import { StatusMessage, type SearchStatus } from './StatusMessage';
@@ -10,12 +10,14 @@ interface SearchPanelProps {
   origins: string[];
   destinations: string[];
   dates: { start: string; end: string };
+  returnDates: { start: string; end: string };
   loading: boolean;
   status: SearchStatus;
   onOriginsChange: (origins: string[]) => void;
   onDestinationsChange: (destinations: string[]) => void;
   onSwap: () => void;
   onDatesChange: (dates: { start: string; end: string }) => void;
+  onReturnDatesChange: (dates: { start: string; end: string }) => void;
   onSearch: () => void;
 }
 
@@ -24,12 +26,14 @@ export function SearchPanel({
   origins,
   destinations,
   dates,
+  returnDates,
   loading,
   status,
   onOriginsChange,
   onDestinationsChange,
   onSwap,
   onDatesChange,
+  onReturnDatesChange,
   onSearch,
 }: SearchPanelProps) {
   return (
@@ -70,9 +74,45 @@ export function SearchPanel({
 
         <FieldContainer className="flex-none w-full md:w-[280px]">
           <MutedMetadata className="flex justify-between gap-2.5 mb-1.5 font-bold">
-            <span>Date range</span>
+            <span>Travel dates</span>
           </MutedMetadata>
-          <DateRangePicker value={dates} onChange={onDatesChange} />
+          <div className="space-y-2">
+            <div>
+              <span className="mb-1 block px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-copy-muted">
+                Departure
+              </span>
+              <DateRangePicker
+                value={dates}
+                onChange={onDatesChange}
+                label="Select departure date range"
+                placeholder="Departure date range"
+              />
+            </div>
+            <div>
+              <span className="mb-1 block px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-copy-muted">
+                Return <span className="font-medium normal-case tracking-normal opacity-70">(optional)</span>
+              </span>
+              <div className="flex items-center gap-1.5">
+                <DateRangePicker
+                  value={returnDates}
+                  onChange={onReturnDatesChange}
+                  label="Select return date range"
+                  placeholder="Return date range"
+                  minDate={dates.start ? new Date(`${dates.start}T00:00:00`) : undefined}
+                />
+                {returnDates.start && (
+                  <button
+                    type="button"
+                    onClick={() => onReturnDatesChange({ start: '', end: '' })}
+                    aria-label="Clear return date range"
+                    className="grid size-8 shrink-0 place-items-center rounded-lg text-copy-muted transition-colors hover:bg-brand-soft hover:text-copy-strong focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </FieldContainer>
 
         <div className="flex-none w-full md:w-[170px] flex">

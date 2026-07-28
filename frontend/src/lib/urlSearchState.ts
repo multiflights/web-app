@@ -2,6 +2,7 @@ export interface SearchInputState {
   origins: string[];
   destinations: string[];
   dates: { start: string; end: string };
+  returnDates: { start: string; end: string };
 }
 
 const parseAirportList = (value: string | null): string[] => {
@@ -21,15 +22,21 @@ export function parseSearchParams(search: string): SearchInputState {
       start: params.get('start') ?? '',
       end: params.get('end') ?? '',
     },
+    returnDates: {
+      start: params.get('returnStart') ?? '',
+      end: params.get('returnEnd') ?? '',
+    },
   };
 }
 
-export function buildSearchParams({ origins, destinations, dates }: SearchInputState): string {
+export function buildSearchParams({ origins, destinations, dates, returnDates }: SearchInputState): string {
   const params = new URLSearchParams();
   if (origins.length > 0) params.set('origins', origins.join(','));
   if (destinations.length > 0) params.set('destinations', destinations.join(','));
   if (dates.start) params.set('start', dates.start);
   if (dates.end) params.set('end', dates.end);
+  if (returnDates.start) params.set('returnStart', returnDates.start);
+  if (returnDates.end) params.set('returnEnd', returnDates.end);
 
   const query = params.toString();
   return query ? `?${query}` : '';
@@ -54,13 +61,32 @@ export function sanitizeDates(dates: SearchInputState['dates']): SearchInputStat
   };
 }
 
+export function sanitizeSearchDates(
+  dates: SearchInputState['dates'],
+  returnDates: SearchInputState['returnDates']
+): Pick<SearchInputState, 'dates' | 'returnDates'> {
+  const sanitizedDates = sanitizeDates(dates);
+  const sanitizedReturnDates = sanitizeDates(returnDates);
+
+  if (
+    sanitizedDates.start &&
+    sanitizedReturnDates.start &&
+    sanitizedReturnDates.start < sanitizedDates.start
+  ) {
+    return { dates: sanitizedDates, returnDates: { start: '', end: '' } };
+  }
+
+  return { dates: sanitizedDates, returnDates: sanitizedReturnDates };
+}
+
 /**
  * True when the URL carries any search-related parameter at all. Because the
  * URL is only written when a search is triggered, this doubles as "a search was
  * committed at some point" — even if the committed search was incomplete.
  */
-export function hasAnySearchParam({ origins, destinations, dates }: SearchInputState): boolean {
-  return origins.length > 0 || destinations.length > 0 || Boolean(dates.start) || Boolean(dates.end);
+export function hasAnySearchParam({ origins, destinations, dates, returnDates }: SearchInputState): boolean {
+  return origins.length > 0 || destinations.length > 0 || Boolean(dates.start) || Boolean(dates.end)
+    || Boolean(returnDates.start) || Boolean(returnDates.end);
 }
 
 /**

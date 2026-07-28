@@ -11,10 +11,20 @@ import { cn } from "@/lib/utils";
 interface DateRangePickerProps {
   value: { start: string; end: string };
   onChange: (range: { start: string; end: string }) => void;
+  label?: string;
+  placeholder?: string;
+  minDate?: Date;
   className?: string;
 }
 
-export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
+export function DateRangePicker({
+  value,
+  onChange,
+  label = "Date range",
+  placeholder = "Pick a date range",
+  minDate,
+  className,
+}: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -40,11 +50,11 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     onChange({ start: format(from, "yyyy-MM-dd"), end: day });
   };
 
-  const label = selected?.from
+  const displayLabel = selected?.from
     ? selected.to
       ? `${format(selected.from, "MMM d")} – ${format(selected.to, "MMM d, yyyy")}`
       : format(selected.from, "MMM d, yyyy")
-    : "Pick a date range";
+    : placeholder;
 
   const triggerClassName = cn(
     "flex w-full items-center gap-2 rounded-xl border border-surface-border bg-surface-panel px-3 py-1.5 text-sm outline-none transition-all",
@@ -56,7 +66,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
   const triggerContent = (
     <>
       <CalendarIcon className="size-4 shrink-0 opacity-60" />
-      <span className="truncate">{label}</span>
+      <span className="truncate">{displayLabel}</span>
     </>
   );
 
@@ -67,7 +77,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       onSelect={handleSelect}
       numberOfMonths={isDesktop ? 2 : 1}
       showOutsideDays={false}
-      disabled={{ before: new Date() }}
+      disabled={{ before: minDate ?? new Date() }}
       className="[--cell-size:--spacing(9)]"
     />
   );
@@ -78,9 +88,9 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
   if (!isDesktop) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className={triggerClassName}>{triggerContent}</DialogTrigger>
+        <DialogTrigger aria-label={label} className={triggerClassName}>{triggerContent}</DialogTrigger>
         <DialogContent className="flex w-fit max-w-[calc(100vw-1.5rem)] max-h-[90vh] items-center justify-center overflow-auto p-3">
-          <DialogTitle className="sr-only">Select a date range</DialogTitle>
+          <DialogTitle className="sr-only">{label}</DialogTitle>
           {calendar}
         </DialogContent>
       </Dialog>
@@ -89,7 +99,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={triggerClassName}>{triggerContent}</PopoverTrigger>
+      <PopoverTrigger aria-label={label} className={triggerClassName}>{triggerContent}</PopoverTrigger>
       <PopoverContent className="w-auto max-w-[calc(100vw-1rem)] p-4" align="center">
         {calendar}
       </PopoverContent>

@@ -40,10 +40,25 @@ def test_parse_query_expands_and_normalizes_combinations():
     )
 
     assert list(parse_query(query)) == [
-        ("JFK", "LAX", date(2026, 6, 12)),
-        ("JFK", "LAX", date(2026, 6, 13)),
-        ("BOS", "LAX", date(2026, 6, 12)),
-        ("BOS", "LAX", date(2026, 6, 13)),
+        ("JFK", "LAX", date(2026, 6, 12), None),
+        ("JFK", "LAX", date(2026, 6, 13), None),
+        ("BOS", "LAX", date(2026, 6, 12), None),
+        ("BOS", "LAX", date(2026, 6, 13), None),
+    ]
+
+
+def test_parse_query_expands_valid_round_trip_date_pairs():
+    query = FlightSearchQuery(
+        origins=["JFK"],
+        destinations=["LAX"],
+        departure_dates=[date(2026, 6, 12), date(2026, 6, 15)],
+        return_dates=[date(2026, 6, 14), date(2026, 6, 18)],
+    )
+
+    assert list(parse_query(query)) == [
+        ("JFK", "LAX", date(2026, 6, 12), date(2026, 6, 14)),
+        ("JFK", "LAX", date(2026, 6, 12), date(2026, 6, 18)),
+        ("JFK", "LAX", date(2026, 6, 15), date(2026, 6, 18)),
     ]
 
 

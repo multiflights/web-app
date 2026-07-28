@@ -7,12 +7,14 @@ const sampleDraft: SearchInputState = {
   origins: ['JFK', 'LAX'],
   destinations: ['ORD'],
   dates: { start: '2026-06-01', end: '2026-06-05' },
+  returnDates: { start: '2026-06-10', end: '2026-06-12' },
 };
 
 const emptyDraft: SearchInputState = {
   origins: [],
   destinations: [],
   dates: { start: '', end: '' },
+  returnDates: { start: '', end: '' },
 };
 
 describe('draftStorage', () => {
@@ -44,6 +46,7 @@ describe('draftStorage', () => {
       origins: ['JFK'],
       destinations: [],
       dates: { start: '2026-06-01', end: '' },
+      returnDates: { start: '', end: '' },
     });
   });
 

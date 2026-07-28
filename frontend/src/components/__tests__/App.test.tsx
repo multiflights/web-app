@@ -37,8 +37,12 @@ const seedDraft = (draft: {
   origins: string[];
   destinations: string[];
   dates: { start: string; end: string };
+  returnDates?: { start: string; end: string };
 }) => {
-  window.localStorage.setItem('flight-search:draft', JSON.stringify(draft));
+  window.localStorage.setItem(
+    'flight-search:draft',
+    JSON.stringify({ ...draft, returnDates: draft.returnDates ?? { start: '', end: '' } })
+  );
 };
 
 const searchCalls = () =>
@@ -126,6 +130,25 @@ describe('App URL-synced search state', () => {
     });
 
     await screen.findByText('1 route option found');
+  });
+
+  it('includes the optional return range in a round-trip search', async () => {
+    setUrl(
+      '/?origins=JFK&destinations=LAX&start=2026-06-01&end=2026-06-02'
+      + '&returnStart=2026-06-10&returnEnd=2026-06-11'
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(searchCalls()).not.toHaveLength(0);
+    });
+
+    const body = JSON.parse(
+      (searchCalls().at(-1)![1] as RequestInit).body as string
+    );
+    expect(body.departure_dates).toEqual(['2026-06-01', '2026-06-02']);
+    expect(body.return_dates).toEqual(['2026-06-10', '2026-06-11']);
   });
 
   it('does not auto-search when the URL params are incomplete', async () => {
@@ -218,7 +241,7 @@ describe('App URL-synced search state', () => {
 
     // The corrupt date is dropped, leaving an incomplete search: the page renders
     // normally (no crash), shows the empty date picker, and never fetches.
-    expect(await screen.findByText('Pick a date range')).toBeInTheDocument();
+    expect(await screen.findByText('Departure date range')).toBeInTheDocument();
     expect(screen.getByText('Enter a route to search.')).toBeInTheDocument();
     await waitFor(() => {
       expect(searchCalls()).toHaveLength(0);

@@ -12,7 +12,7 @@ import {
   hasAnySearchParam,
   isCompleteSearch,
   parseSearchParams,
-  sanitizeDates,
+  sanitizeSearchDates,
   type SearchInputState,
 } from './lib/urlSearchState';
 import { loadDraftInputs, saveDraftInputs } from './lib/draftStorage';
@@ -36,7 +36,7 @@ import './styles/globals.css';
 function getInitialInputs(): SearchInputState {
   const fromUrl = parseSearchParams(window.location.search);
   const inputs = hasAnySearchParam(fromUrl) ? fromUrl : loadDraftInputs();
-  return { ...inputs, dates: sanitizeDates(inputs.dates) };
+  return { ...inputs, ...sanitizeSearchDates(inputs.dates, inputs.returnDates) };
 }
 
 export default function App() {
@@ -44,6 +44,7 @@ export default function App() {
   const [origins, setOrigins] = useState<string[]>(() => getInitialInputs().origins);
   const [destinations, setDestinations] = useState<string[]>(() => getInitialInputs().destinations);
   const [dates, setDates] = useState(() => getInitialInputs().dates);
+  const [returnDates, setReturnDates] = useState(() => getInitialInputs().returnDates);
   // Whether this page load started from a committed search in the URL. Captured
   // once up front because validation may later strip the URL back to empty.
   const startedFromUrl = useRef(hasAnySearchParam(parseSearchParams(window.location.search)));
@@ -77,12 +78,22 @@ export default function App() {
    * so it can be driven both by the Search button (current fields) and by the
    * on-load auto-refetch (the validated URL params).
    */
-  const runSearch = async ({ origins, destinations, dates }: SearchInputState) => {
+  const runSearch = async ({ origins, destinations, dates, returnDates }: SearchInputState) => {
     const departureDates = getDatesInRange(dates.start, dates.end);
-
+    const selectedReturnDates = returnDates.start
+      ? getDatesInRange(returnDates.start, returnDates.end)
+      : [];
 
     const MAX_CALLS = 50;
-    const estimatedCalls = origins.length * destinations.length * departureDates.length;
+    const validRoundTripCombinations = departureDates.reduce(
+      (total, departureDate) =>
+        total + selectedReturnDates.filter(returnDate => returnDate >= departureDate).length,
+      0
+    );
+    const dateCombinations = selectedReturnDates.length > 0
+      ? validRoundTripCombinations
+      : departureDates.length;
+    const estimatedCalls = origins.length * destinations.length * dateCombinations;
     if (estimatedCalls > MAX_CALLS) {
       const what = origins.length * destinations.length > 1
         ? `${origins.length} origins × ${destinations.length} destinations × ${departureDates.length} days`
@@ -107,6 +118,13 @@ export default function App() {
       });
       return;
     }
+    if (returnDates.start && (selectedReturnDates.length === 0 || validRoundTripCombinations === 0)) {
+      setStatus({
+        variant: 'error',
+        message: 'Return dates must be on or after at least one departure date.',
+      });
+      return;
+    }
 
     // The search is valid, so commit it to the URL now. This is the only place
     // the URL is written, so a refresh replays exactly this search and discards
@@ -114,7 +132,7 @@ export default function App() {
     window.history.replaceState(
       null,
       '',
-      buildSearchParams({ origins, destinations, dates }) || window.location.pathname
+      buildSearchParams({ origins, destinations, dates, returnDates }) || window.location.pathname
     );
 
     setLoading(true);
@@ -126,7 +144,8 @@ export default function App() {
     const searchQuery: FlightSearchQuery = {
       origins,
       destinations,
-      departure_dates: departureDates
+      departure_dates: departureDates,
+      ...(selectedReturnDates.length > 0 ? { return_dates: selectedReturnDates } : {}),
     };
 
     try {
@@ -157,7 +176,14 @@ export default function App() {
     }
   };
 
-  const handleSearch = () => runSearch({ origins, destinations, dates });
+  const handleSearch = () => runSearch({ origins, destinations, dates, returnDates });
+
+  const handleDatesChange = (nextDates: SearchInputState['dates']) => {
+    setDates(nextDates);
+    if (returnDates.start && nextDates.start && returnDates.start < nextDates.start) {
+      setReturnDates({ start: '', end: '' });
+    }
+  };
 
   /**
    * Swap the departure and arrival airport lists.
@@ -171,8 +197,8 @@ export default function App() {
   // keeps whatever the user has typed. Once a search is committed the URL takes
   // over on reload, so this draft only matters while the URL is still empty.
   useEffect(() => {
-    saveDraftInputs({ origins, destinations, dates });
-  }, [origins, destinations, dates]);
+    saveDraftInputs({ origins, destinations, dates, returnDates });
+  }, [origins, destinations, dates, returnDates]);
 
   // Once the airport list is available we can validate the airport codes that
   // came from the URL, dropping any that aren't real airports (leaving the field
@@ -193,6 +219,7 @@ export default function App() {
       origins: origins.filter(code => validCodes.has(code)),
       destinations: destinations.filter(code => validCodes.has(code)),
       dates, // already sanitized at init
+      returnDates, // already sanitized at init
     };
 
     setOrigins(cleaned.origins);
@@ -221,12 +248,14 @@ export default function App() {
           origins={origins}
           destinations={destinations}
           dates={dates}
+          returnDates={returnDates}
           loading={loading}
           status={status}
           onOriginsChange={setOrigins}
           onDestinationsChange={setDestinations}
           onSwap={handleSwap}
-          onDatesChange={setDates}
+          onDatesChange={handleDatesChange}
+          onReturnDatesChange={setReturnDates}
           onSearch={handleSearch}
         />
         <ResultsPanel results={results} />

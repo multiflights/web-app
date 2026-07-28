@@ -94,19 +94,22 @@ describe('layout components', () => {
         origins={[]}
         destinations={[]}
         dates={{ start: '', end: '' }}
+        returnDates={{ start: '', end: '' }}
         loading={false}
         status={{ variant: 'neutral', message: 'Enter your search.' }}
         onOriginsChange={vi.fn()}
         onDestinationsChange={vi.fn()}
         onSwap={vi.fn()}
         onDatesChange={vi.fn()}
+        onReturnDatesChange={vi.fn()}
         onSearch={handleSearch}
       />
     );
 
     expect(screen.getByText('Departures')).toBeInTheDocument();
     expect(screen.getByText('Arrivals')).toBeInTheDocument();
-    expect(screen.getByText('Date range')).toBeInTheDocument();
+    expect(screen.getByText('Travel dates')).toBeInTheDocument();
+    expect(screen.getByText('Return date range')).toBeInTheDocument();
     expect(screen.getByText('Enter your search.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
@@ -122,18 +125,45 @@ describe('layout components', () => {
         origins={['JFK']}
         destinations={['LAX']}
         dates={{ start: '', end: '' }}
+        returnDates={{ start: '', end: '' }}
         loading={false}
         status={{ variant: 'neutral', message: 'Enter your search.' }}
         onOriginsChange={vi.fn()}
         onDestinationsChange={vi.fn()}
         onSwap={handleSwap}
         onDatesChange={vi.fn()}
+        onReturnDatesChange={vi.fn()}
         onSearch={vi.fn()}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /swap departures and arrivals/i }));
     expect(handleSwap).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows an optional return range to be cleared', () => {
+    const handleReturnDatesChange = vi.fn();
+
+    render(
+      <SearchPanel
+        allAirports={airports}
+        origins={[]}
+        destinations={[]}
+        dates={{ start: '2026-08-17', end: '' }}
+        returnDates={{ start: '2026-08-24', end: '2026-08-26' }}
+        loading={false}
+        status={{ variant: 'neutral', message: '' }}
+        onOriginsChange={vi.fn()}
+        onDestinationsChange={vi.fn()}
+        onSwap={vi.fn()}
+        onDatesChange={vi.fn()}
+        onReturnDatesChange={handleReturnDatesChange}
+        onSearch={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear return date range' }));
+    expect(handleReturnDatesChange).toHaveBeenCalledWith({ start: '', end: '' });
   });
 
   it('shows an empty results state', () => {

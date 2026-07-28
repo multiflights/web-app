@@ -27,7 +27,7 @@ The backend automatically loads `backend/environment.env` for local development.
 
 ## Notes
 
-- The current search flow uses one-way Google Flights searches because the backend query model only carries departure dates.
+- Searches are one-way when `return_dates` is omitted and round-trip when it is provided.
 - SerpApi returns booking options separately. The backend resolves those into:
   - `booking_url` for direct `GET` deeplinks
   - `booking_request` for actions that require a server-side `POST`

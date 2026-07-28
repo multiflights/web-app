@@ -22,6 +22,7 @@ class Flight(BaseModel):
     airline_logo_url: str | None = None
     price: float
     segments: List[FlightSegment]
+    return_segments: List[FlightSegment] | None = None
     duration_minutes: int
     booking_url: str | None = None
     booking_request: BookingRequest | None = None
@@ -30,6 +31,7 @@ class Flight(BaseModel):
 class FlightSearchResult(BaseModel):
     """Contains all flight results for a specific (date, origin, destination) combination"""
     date: date
+    return_date: date | None = None
     origin: str
     destination: str
     flights: List[Flight]

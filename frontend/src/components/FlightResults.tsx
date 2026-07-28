@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { Flight, FlightSearchResult } from '../types/flight-search-result';
+import type { Flight, FlightSearchResult, FlightSegment } from '../types/flight-search-result';
 import { ChevronDown, Plane } from 'lucide-react';
 import { MutedMetadata, PrimaryActionButton, ResultCard } from './base/surface';
 import { buttonVariants } from './base/button';
@@ -111,13 +111,18 @@ function ResultChip({ children, tone = 'neutral' }: { children: ReactNode; tone?
   );
 }
 
-function RouteTimeline({ flight }: { flight: Flight }) {
-  const first = flight.segments[0];
-  const last = flight.segments[flight.segments.length - 1];
+function RouteLeg({ segments, label }: { segments: FlightSegment[]; label?: string }) {
+  const first = segments[0];
+  const last = segments[segments.length - 1];
   const dayDiff = getDayDiff(first.start_time, last.end_time);
 
   return (
-    <div className="grid grid-cols-[auto_minmax(96px,1fr)_auto] items-center gap-3 md:px-2">
+    <div className="relative grid grid-cols-[auto_minmax(96px,1fr)_auto] items-center gap-3 md:px-2">
+      {label && (
+        <span className="absolute left-1/2 top-0 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.12em] text-copy-muted">
+          {label}
+        </span>
+      )}
       <div className="min-w-[56px]">
         <span className="block text-xl font-extrabold text-copy-strong">{first.origin}</span>
         <MutedMetadata className="text-sm font-semibold">
@@ -144,8 +149,22 @@ function RouteTimeline({ flight }: { flight: Flight }) {
   );
 }
 
+function RouteTimeline({ flight }: { flight: Flight }) {
+  if (flight.return_segments?.length) {
+    return (
+      <div className="grid gap-2">
+        <RouteLeg segments={flight.segments} label="Outbound" />
+        <RouteLeg segments={flight.return_segments} label="Return" />
+      </div>
+    );
+  }
+
+  return <RouteLeg segments={flight.segments} />;
+}
+
 function FlightMeta({ flight, badges }: { flight: Flight; badges: string[] }) {
-  const stopCount = flight.segments.length - 1;
+  const stopCount = flight.segments.length - 1
+    + (flight.return_segments ? flight.return_segments.length - 1 : 0);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -252,6 +271,7 @@ export const FlightGroup = ({ combo }: { combo: FlightSearchResult }) => {
         <div>
           <h3 className="m-0 text-sm font-black tracking-tight text-copy-strong">
             {combo.origin} → {combo.destination} · {formatDate(combo.date)}
+            {combo.return_date ? ` – ${formatDate(combo.return_date)}` : ''}
           </h3>
           <MutedMetadata>
             {combo.flights.length} option{combo.flights.length === 1 ? '' : 's'} ranked by price

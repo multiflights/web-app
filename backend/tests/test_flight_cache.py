@@ -20,6 +20,23 @@ def test_cache_misses_unknown_route():
     assert cache.get(FlightRoute("JFK", "LAX", date(2026, 6, 12))) is None
 
 
+def test_cache_keeps_one_way_and_round_trip_searches_separate():
+    cache = FlightCache(ttl_seconds=60)
+    one_way = FlightRoute("JFK", "LAX", date(2026, 6, 12))
+    round_trip = FlightRoute(
+        "JFK",
+        "LAX",
+        date(2026, 6, 12),
+        date(2026, 6, 20),
+    )
+
+    cache.set(one_way, [{"trip": "one-way"}])
+    cache.set(round_trip, [{"trip": "round-trip"}])
+
+    assert cache.get(one_way) == [{"trip": "one-way"}]
+    assert cache.get(round_trip) == [{"trip": "round-trip"}]
+
+
 def test_cache_expires_entries(monkeypatch):
     cache = FlightCache(ttl_seconds=10)
     route = FlightRoute("JFK", "LAX", date(2026, 6, 12))

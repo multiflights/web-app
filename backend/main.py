@@ -206,19 +206,22 @@ async def fetch_booking_request(
     origin: str,
     destination: str,
     outbound_date: str,
+    return_date: str | None = None,
 ) -> BookingRequest | None:
-    payload = await fetch_serpapi_json(
-        {
-            "booking_token": booking_token,
-            "departure_id": origin,
-            "arrival_id": destination,
-            "outbound_date": outbound_date,
-            "currency": "USD",
-            "type": "2",
-            "hl": "en",
-            "gl": "us",
-        }
-    )
+    params = {
+        "booking_token": booking_token,
+        "departure_id": origin,
+        "arrival_id": destination,
+        "outbound_date": outbound_date,
+        "currency": "USD",
+        "type": "1" if return_date else "2",
+        "hl": "en",
+        "gl": "us",
+    }
+    if return_date:
+        params["return_date"] = return_date
+
+    payload = await fetch_serpapi_json(params)
     booking_request = find_booking_request(payload.get("booking_options"))
     if not booking_request:
         return None
@@ -292,7 +295,18 @@ def parse_query(q: FlightSearchQuery):
     for origin in q.origins:
         for destination in q.destinations:
             for departure_date in q.departure_dates:
-                yield (origin.upper().strip(), destination.upper().strip(), departure_date)
+                if not q.return_dates:
+                    yield (origin.upper().strip(), destination.upper().strip(), departure_date, None)
+                    continue
+
+                for return_date in q.return_dates:
+                    if return_date >= departure_date:
+                        yield (
+                            origin.upper().strip(),
+                            destination.upper().strip(),
+                            departure_date,
+                            return_date,
+                        )
 
 def parse_serpapi_results(
     serpapi_payload: Dict[str, Any],
@@ -338,12 +352,19 @@ def parse_serpapi_results(
         if not isinstance(airline_logo_url, str):
             airline_logo_url = None
 
+        outbound_segment_count = itinerary.get("_outbound_segment_count")
+        return_segments = None
+        if route.return_date and isinstance(outbound_segment_count, int):
+            return_segments = segments[outbound_segment_count:]
+            segments = segments[:outbound_segment_count]
+
         flights.append(
             Flight(
                 airline=airline,
                 airline_logo_url=airline_logo_url,
                 price=float(price),
                 segments=segments,
+                return_segments=return_segments,
                 duration_minutes=duration_minutes,
                 booking_url=booking_url,
                 booking_request=booking_request,
@@ -357,25 +378,93 @@ def parse_serpapi_results(
 
     return FlightSearchResult(
         date=route.date,
+        return_date=route.return_date,
         origin=route.origin,
         destination=route.destination,
         flights=flights,
     )
 
 
-async def fetch_single_route(origin: str, dest: str, dt_str: str, route: FlightRoute):
+async def fetch_single_route(
+    origin: str,
+    dest: str,
+    outbound_date: str,
+    route: FlightRoute,
+    return_date: str | None = None,
+):
     try:
-        search_payload = await fetch_serpapi_json(
-            {
-                "departure_id": origin,
-                "arrival_id": dest,
-                "outbound_date": dt_str,
-                "currency": "USD",
-                "type": "2",
-                "hl": "en",
-                "gl": "us",
-            }
-        )
+        search_params = {
+            "departure_id": origin,
+            "arrival_id": dest,
+            "outbound_date": outbound_date,
+            "currency": "USD",
+            "type": "1" if return_date else "2",
+            "hl": "en",
+            "gl": "us",
+        }
+        if return_date:
+            search_params["return_date"] = return_date
+
+        search_payload = await fetch_serpapi_json(search_params)
+
+        if return_date:
+            outbound_itineraries = (
+                (search_payload.get("best_flights") or [])
+                + (search_payload.get("other_flights") or [])
+            )[:SERPAPI_FLIGHT_LIMIT]
+            return_payloads = await asyncio.gather(
+                *(
+                    fetch_serpapi_json({
+                        **search_params,
+                        "departure_token": itinerary["departure_token"],
+                    })
+                    for itinerary in outbound_itineraries
+                    if isinstance(itinerary.get("departure_token"), str)
+                ),
+                return_exceptions=True,
+            )
+
+            combined_itineraries = []
+            for outbound_itinerary, return_payload in zip(
+                [
+                    itinerary
+                    for itinerary in outbound_itineraries
+                    if isinstance(itinerary.get("departure_token"), str)
+                ],
+                return_payloads,
+            ):
+                if isinstance(return_payload, Exception):
+                    continue
+                return_itineraries = (
+                    (return_payload.get("best_flights") or [])
+                    + (return_payload.get("other_flights") or [])
+                )
+                for return_itinerary in return_itineraries:
+                    outbound_duration = outbound_itinerary.get("total_duration")
+                    inbound_duration = return_itinerary.get("total_duration")
+                    combined_itineraries.append({
+                        **return_itinerary,
+                        "flights": (
+                            (outbound_itinerary.get("flights") or [])
+                            + (return_itinerary.get("flights") or [])
+                        ),
+                        "airline_logo": (
+                            return_itinerary.get("airline_logo")
+                            or outbound_itinerary.get("airline_logo")
+                        ),
+                        "total_duration": (
+                            (outbound_duration if isinstance(outbound_duration, int) else 0)
+                            + (inbound_duration if isinstance(inbound_duration, int) else 0)
+                        ),
+                        "_outbound_segment_count": len(outbound_itinerary.get("flights") or []),
+                    })
+
+            combined_itineraries.sort(
+                key=lambda itinerary: itinerary.get("price")
+                if isinstance(itinerary.get("price"), (int, float))
+                else float("inf")
+            )
+            search_payload = {"best_flights": combined_itineraries[:SERPAPI_FLIGHT_LIMIT]}
 
         itineraries = (search_payload.get("best_flights") or []) + (search_payload.get("other_flights") or [])
         booking_tokens = [
@@ -384,7 +473,10 @@ async def fetch_single_route(origin: str, dest: str, dt_str: str, route: FlightR
             if isinstance(itinerary.get("booking_token"), str)
         ]
         booking_requests_list = await asyncio.gather(
-            *(fetch_booking_request(token, origin, dest, dt_str) for token in booking_tokens),
+            *(
+                fetch_booking_request(token, origin, dest, outbound_date, return_date)
+                for token in booking_tokens
+            ),
             return_exceptions=True,
         )
 
@@ -420,15 +512,23 @@ async def search_flights(query: FlightSearchQuery):
         results = []
         all_routes = list(parse_query(query))
 
-        for origin, dest, departure_date in all_routes:
-            route = FlightRoute(origin, dest, departure_date)
+        for origin, dest, departure_date, return_date in all_routes:
+            route = FlightRoute(origin, dest, departure_date, return_date)
             cached_data = flight_cache.get(route)
 
             if cached_data:
                 results.append(cached_data)
                 continue
 
-            task = asyncio.create_task(fetch_single_route(origin, dest, departure_date.isoformat(), route))
+            task = asyncio.create_task(
+                fetch_single_route(
+                    origin,
+                    dest,
+                    departure_date.isoformat(),
+                    route,
+                    return_date.isoformat() if return_date else None,
+                )
+            )
             tasks.append(task)
             await asyncio.sleep(0.1)
 

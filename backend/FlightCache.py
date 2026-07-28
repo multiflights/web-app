@@ -11,7 +11,7 @@ class FlightCache:
         self.ttl = ttl_seconds
 
     def get(self, route: FlightRoute) -> FlightSearchResult:
-        key = f"{route.origin}:{route.destination}:{route.date}"
+        key = self._key(route)
         entry = self._cache.get(key)
         if not entry:
             return None
@@ -24,11 +24,15 @@ class FlightCache:
         return entry["data"]
 
     def set(self, route: FlightRoute, data: List[Dict]):
-        key = f"{route.origin}:{route.destination}:{route.date}"
+        key = self._key(route)
         self._cache[key] = {
             "expiry": time.time() + self.ttl,
             "data": data
         }
+
+    @staticmethod
+    def _key(route: FlightRoute) -> str:
+        return f"{route.origin}:{route.destination}:{route.date}:{route.return_date or 'one-way'}"
 
     def cleanup(self):
         """Remove all expired entries to free memory."""
@@ -36,4 +40,3 @@ class FlightCache:
         expired_keys = [k for k, v in self._cache.items() if now > v["expiry"]]
         for k in expired_keys:
             del self._cache[k]
-

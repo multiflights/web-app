@@ -5,16 +5,20 @@ import {
   isValidDateParam,
   parseSearchParams,
   sanitizeDates,
+  sanitizeSearchDates,
 } from '../urlSearchState';
 
 describe('urlSearchState', () => {
   it('parses origins, destinations, and dates from a query string', () => {
-    const result = parseSearchParams('?origins=JFK,LAX&destinations=ORD&start=2026-06-01&end=2026-06-02');
+    const result = parseSearchParams(
+      '?origins=JFK,LAX&destinations=ORD&start=2026-06-01&end=2026-06-02&returnStart=2026-06-10&returnEnd=2026-06-12'
+    );
 
     expect(result).toEqual({
       origins: ['JFK', 'LAX'],
       destinations: ['ORD'],
       dates: { start: '2026-06-01', end: '2026-06-02' },
+      returnDates: { start: '2026-06-10', end: '2026-06-12' },
     });
   });
 
@@ -32,6 +36,7 @@ describe('urlSearchState', () => {
       origins: [],
       destinations: [],
       dates: { start: '', end: '' },
+      returnDates: { start: '', end: '' },
     });
   });
 
@@ -46,13 +51,21 @@ describe('urlSearchState', () => {
       origins: ['JFK', 'LAX'],
       destinations: ['ORD'],
       dates: { start: '2026-06-01', end: '2026-06-02' },
+      returnDates: { start: '2026-06-10', end: '2026-06-12' },
     });
 
-    expect(query).toBe('?origins=JFK%2CLAX&destinations=ORD&start=2026-06-01&end=2026-06-02');
+    expect(query).toBe(
+      '?origins=JFK%2CLAX&destinations=ORD&start=2026-06-01&end=2026-06-02&returnStart=2026-06-10&returnEnd=2026-06-12'
+    );
   });
 
   it('returns an empty string when all fields are empty', () => {
-    const query = buildSearchParams({ origins: [], destinations: [], dates: { start: '', end: '' } });
+    const query = buildSearchParams({
+      origins: [],
+      destinations: [],
+      dates: { start: '', end: '' },
+      returnDates: { start: '', end: '' },
+    });
 
     expect(query).toBe('');
   });
@@ -75,11 +88,24 @@ describe('urlSearchState', () => {
     });
   });
 
+  it('drops a return range that starts before the departure range', () => {
+    expect(
+      sanitizeSearchDates(
+        { start: '2026-06-10', end: '2026-06-12' },
+        { start: '2026-06-09', end: '2026-06-15' }
+      )
+    ).toEqual({
+      dates: { start: '2026-06-10', end: '2026-06-12' },
+      returnDates: { start: '', end: '' },
+    });
+  });
+
   it('round-trips through parse and build', () => {
     const original = {
       origins: ['JFK', 'LAX'],
       destinations: ['ORD', 'SFO'],
       dates: { start: '2026-06-01', end: '2026-06-05' },
+      returnDates: { start: '2026-06-10', end: '2026-06-12' },
     };
 
     const roundTripped = parseSearchParams(buildSearchParams(original));
