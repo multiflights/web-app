@@ -20,8 +20,13 @@ from data.FlightSearchQuery import FlightSearchQuery
 from data.FlightSearchResult import BookingRequest, Flight, FlightSearchResult, FlightSegment
 
 SERPAPI_SEARCH_URL = "https://serpapi.com/search.json"
-SERPAPI_TIMEOUT_SECONDS = 20
+SERPAPI_CONNECT_TIMEOUT_SECONDS = 10
+SERPAPI_READ_TIMEOUT_SECONDS = 45
+SERPAPI_READ_TIMEOUT_RETRIES = 1
+SERPAPI_RETRY_BACKOFF_SECONDS = 0.5
+SERPAPI_MAX_CONCURRENT_REQUESTS = 4
 SERPAPI_FLIGHT_LIMIT = 5
+serpapi_request_semaphore = asyncio.Semaphore(SERPAPI_MAX_CONCURRENT_REQUESTS)
 
 
 class MissingConfigurationWarning(UserWarning):
@@ -165,33 +170,45 @@ async def booking_redirect(
     )
 
 
-async def fetch_serpapi_json(params: Dict[str, Any]) -> Dict[str, Any]:
+async def fetch_serpapi_json(
+    params: Dict[str, Any],
+    *,
+    force_fresh: bool = True,
+) -> Dict[str, Any]:
     request_params = {
         **params,
         "engine": "google_flights",
         "api_key": required_environment_value("SERPAPI_KEY"),
-        "no_cache": "true",
     }
+    if force_fresh:
+        request_params["no_cache"] = "true"
 
-    try:
-        async with httpx.AsyncClient(timeout=SERPAPI_TIMEOUT_SECONDS) as client:
-            response = await client.get(SERPAPI_SEARCH_URL, params=request_params)
-            response.raise_for_status()
-    except httpx.HTTPError as error:
-        sanitized = redact_sensitive_params(request_params)
-        response = getattr(error, "response", None)
-        response_body = None
-        if response is not None:
-            try:
-                response_body = response.text
-            except Exception:
-                response_body = None
+    timeout = httpx.Timeout(
+        connect=SERPAPI_CONNECT_TIMEOUT_SECONDS,
+        read=SERPAPI_READ_TIMEOUT_SECONDS,
+        write=SERPAPI_CONNECT_TIMEOUT_SECONDS,
+        pool=SERPAPI_CONNECT_TIMEOUT_SECONDS,
+    )
+    attempts = SERPAPI_READ_TIMEOUT_RETRIES + 1
+    response = None
 
-        details = f"SerpApi request failed; params={sanitized}; error={error}"
-        if response_body:
-            details += f"; response_body={response_body}"
+    for attempt in range(attempts):
+        try:
+            async with serpapi_request_semaphore:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    response = await client.get(SERPAPI_SEARCH_URL, params=request_params)
+                    response.raise_for_status()
+            break
+        except httpx.ReadTimeout as error:
+            if attempt + 1 < attempts:
+                await asyncio.sleep(SERPAPI_RETRY_BACKOFF_SECONDS * (attempt + 1))
+                continue
+            raise_serpapi_request_error(error, request_params)
+        except httpx.HTTPError as error:
+            raise_serpapi_request_error(error, request_params)
 
-        raise RuntimeError(details) from error
+    if response is None:
+        raise RuntimeError("SerpApi request ended without a response.")
 
     payload = response.json()
     if payload.get("error"):
@@ -201,27 +218,42 @@ async def fetch_serpapi_json(params: Dict[str, Any]) -> Dict[str, Any]:
     return payload
 
 
+def raise_serpapi_request_error(
+    error: httpx.HTTPError,
+    request_params: Dict[str, Any],
+) -> None:
+    sanitized = redact_sensitive_params(request_params)
+    response = getattr(error, "response", None)
+    response_body = None
+    if response is not None:
+        try:
+            response_body = response.text
+        except Exception:
+            response_body = None
+
+    details = (
+        "SerpApi request failed; "
+        f"params={sanitized}; "
+        f"error_type={type(error).__name__}; "
+        f"error={error!r}"
+    )
+    if response_body:
+        details += f"; response_body={response_body}"
+
+    raise RuntimeError(details) from error
+
+
 async def fetch_booking_request(
     booking_token: str,
-    origin: str,
-    destination: str,
-    outbound_date: str,
-    return_date: str | None = None,
 ) -> BookingRequest | None:
     params = {
         "booking_token": booking_token,
-        "departure_id": origin,
-        "arrival_id": destination,
-        "outbound_date": outbound_date,
         "currency": "USD",
-        "type": "1" if return_date else "2",
         "hl": "en",
         "gl": "us",
     }
-    if return_date:
-        params["return_date"] = return_date
 
-    payload = await fetch_serpapi_json(params)
+    payload = await fetch_serpapi_json(params, force_fresh=False)
     booking_request = find_booking_request(payload.get("booking_options"))
     if not booking_request:
         return None
@@ -414,10 +446,13 @@ async def fetch_single_route(
             )[:SERPAPI_FLIGHT_LIMIT]
             return_payloads = await asyncio.gather(
                 *(
-                    fetch_serpapi_json({
-                        **search_params,
-                        "departure_token": itinerary["departure_token"],
-                    })
+                    fetch_serpapi_json(
+                        {
+                            **search_params,
+                            "departure_token": itinerary["departure_token"],
+                        },
+                        force_fresh=False,
+                    )
                     for itinerary in outbound_itineraries
                     if isinstance(itinerary.get("departure_token"), str)
                 ),
@@ -474,7 +509,7 @@ async def fetch_single_route(
         ]
         booking_requests_list = await asyncio.gather(
             *(
-                fetch_booking_request(token, origin, dest, outbound_date, return_date)
+                fetch_booking_request(token)
                 for token in booking_tokens
             ),
             return_exceptions=True,

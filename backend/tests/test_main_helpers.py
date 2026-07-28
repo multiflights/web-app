@@ -1,16 +1,21 @@
+import asyncio
 import os
 from datetime import date, datetime, timezone
 
+import httpx
 import pytest
 
 os.environ.setdefault("SERPAPI_KEY", "test-serpapi-key")
 
+import main as backend_main
 from data.FlightRoute import FlightRoute
 from data.FlightSearchQuery import FlightSearchQuery
 from data.FlightSearchResult import BookingRequest
 from main import (
     convert_string_to_date,
     convert_string_to_datetime,
+    fetch_serpapi_json,
+    fetch_booking_request,
     find_booking_request,
     iso_duration_to_minutes,
     parse_query,
@@ -86,6 +91,73 @@ def test_redact_sensitive_params_hides_secrets():
     assert redact_sensitive_params({"client_secret": "secret", "airport": "BER"}) == {
         "client_secret": "[redacted]",
         "airport": "BER",
+    }
+
+
+@pytest.mark.anyio
+async def test_serpapi_read_timeout_is_retried_without_forcing_token_lookup_cache(
+    monkeypatch,
+):
+    calls = []
+
+    async def fake_get(_client, url, params):
+        calls.append(params)
+        request = httpx.Request("GET", url)
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("timed out", request=request)
+        return httpx.Response(200, json={"booking_options": []}, request=request)
+
+    async def skip_backoff(_seconds):
+        return None
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+    monkeypatch.setattr(asyncio, "sleep", skip_backoff)
+
+    payload = await fetch_serpapi_json(
+        {"booking_token": "secret-token"},
+        force_fresh=False,
+    )
+
+    assert payload == {"booking_options": []}
+    assert len(calls) == 2
+    assert all("no_cache" not in params for params in calls)
+
+
+@pytest.mark.anyio
+async def test_serpapi_exhausted_timeout_reports_exception_type(monkeypatch):
+    async def always_timeout(_client, url, params):
+        request = httpx.Request("GET", url)
+        raise httpx.ReadTimeout("", request=request)
+
+    async def skip_backoff(_seconds):
+        return None
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", always_timeout)
+    monkeypatch.setattr(asyncio, "sleep", skip_backoff)
+
+    with pytest.raises(RuntimeError, match=r"error_type=ReadTimeout"):
+        await fetch_serpapi_json({"departure_id": "LAX"})
+
+
+@pytest.mark.anyio
+async def test_booking_lookup_sends_only_token_context(monkeypatch):
+    captured = {}
+
+    async def fake_fetch(params, *, force_fresh=True):
+        captured.update({"params": params, "force_fresh": force_fresh})
+        return {"booking_options": []}
+
+    monkeypatch.setattr(backend_main, "fetch_serpapi_json", fake_fetch)
+
+    assert await fetch_booking_request("booking-token") is None
+    assert captured == {
+        "params": {
+            "booking_token": "booking-token",
+            "currency": "USD",
+            "hl": "en",
+            "gl": "us",
+        },
+        "force_fresh": False,
     }
 
 
