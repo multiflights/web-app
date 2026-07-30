@@ -12,9 +12,7 @@ We built Flight Search Engine to bring those combinations into one place, making
 
 ## Support the Project
 
-<!-- TODO: Replace this placeholder with a linked Buy Me a Coffee button once the account URL is available. -->
-
-_Buy us a coffee link coming soon._
+[Buy us a coffee](https://buymeacoffee.com/multiflights) and help keep the project flying.
 
 ## Features
 

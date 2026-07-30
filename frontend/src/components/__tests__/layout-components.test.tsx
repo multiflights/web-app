@@ -81,7 +81,14 @@ describe('layout components', () => {
     expect(screen.getByRole('heading', { name: 'Fewer tabs. More ways to get there.' })).toBeInTheDocument();
     expect(screen.getByText(/juggling dozens of tabs/i)).toBeInTheDocument();
     expect(screen.getByText(/Owen Wild, Richard Kirsch & Timothy Kugler/)).toBeInTheDocument();
-    expect(screen.getByText('Coffee link coming soon')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Buy us a coffee' })).toHaveAttribute(
+      'href',
+      'https://buymeacoffee.com/multiflights'
+    );
+    expect(screen.getByRole('link', { name: 'Buy us a coffee' })).toHaveAttribute(
+      'rel',
+      'noopener noreferrer'
+    );
   });
 
   it('renders status text using muted metadata styling', () => {

@@ -74,13 +74,18 @@ export function AboutProjectDialog() {
                 Help keep it flying
               </h3>
               <p className="mb-0 mt-1 text-xs leading-relaxed text-copy-muted">
-                Like the project? You&apos;ll soon be able to buy us a coffee.
+                Like the project? Buy us a coffee and help keep it running.
               </p>
             </div>
           </div>
-          <span className="self-start whitespace-nowrap rounded-full border border-surface-border bg-surface-panel px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-copy-muted sm:self-center">
-            Coffee link coming soon
-          </span>
+          <a
+            href="https://buymeacoffee.com/multiflights"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="self-start whitespace-nowrap rounded-full border border-brand/25 bg-surface-panel px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-brand shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-[var(--shadow-action)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-0 sm:self-center"
+          >
+            Buy us a coffee
+          </a>
         </div>
       </DialogContent>
     </Dialog>
