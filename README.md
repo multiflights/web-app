@@ -41,7 +41,7 @@ Run both services for local development. By default, the API is available at `ht
 The included workflows deploy the application as two services:
 
 - [Backend workflow](.github/workflows/deploy-backend-cloud-run.yml) — builds the backend container and deploys it to Google Cloud Run.
-- [Frontend workflow](.github/workflows/deploy-frontend-netlify.yml) — tests and builds the frontend, then deploys it to Netlify.
+- [Frontend workflow](.github/workflows/deploy-frontend-pages.yml) — tests and builds the frontend, then deploys it to GitHub Pages at [multiflights.org](https://multiflights.org).
 
 ### 1. Prepare Google Cloud
 
@@ -57,7 +57,7 @@ The backend workflow creates the configured Artifact Registry repository if it d
 ### 2. Prepare external services
 
 - Create a [SerpApi](https://serpapi.com/) account and API key.
-- Create or select a Netlify site and generate a Netlify personal access token.
+- In the repository's **Settings → Pages**, set **Source** to **GitHub Actions** and set the custom domain (the build also ships it in [`frontend/public/CNAME`](frontend/public/CNAME)). Once the certificate is issued, enable **Enforce HTTPS**.
 
 ### 3. Configure GitHub
 
@@ -67,17 +67,15 @@ In the repository's **Settings → Secrets and variables → Actions**, add:
 | --- | --- | --- | --- |
 | Secret | `GCP_SA_KEY` | Yes | Complete JSON key for the Google Cloud service account. |
 | Secret | `SERPAPI_KEY` | Yes | SerpApi key passed to the Cloud Run service. |
-| Secret | `NETLIFY_AUTH_TOKEN` | Yes | Token authorized to deploy the Netlify site. |
 | Variable | `GCP_PROJECT_ID` | Yes | Google Cloud project ID. |
 | Variable | `GCP_REGION` | Yes | Deployment region, such as `europe-west1`. |
-| Variable | `NETLIFY_SITE_ID` | Yes | API ID of the target Netlify site. |
 | Variable | `GAR_REPOSITORY` | No | Artifact Registry repository name. Defaults to `flight-search-backend`. |
 | Variable | `CLOUD_RUN_SERVICE` | No | Cloud Run service name. Defaults to `flight-search-backend`. |
 | Variable | `VITE_BACKEND_URL` | No | Explicit public backend URL. When omitted, the frontend workflow resolves the Cloud Run service URL. |
 
 ### 4. Deploy
 
-Run **Deploy Backend to Cloud Run** from the repository's **Actions** tab. After a successful backend deployment, the frontend workflow runs automatically and deploys the production build to Netlify.
+Run **Deploy Backend to Cloud Run** from the repository's **Actions** tab. After a successful backend deployment, the frontend workflow runs automatically and deploys the production build to GitHub Pages.
 
 Subsequent pushes to `main` deploy only the affected service:
 

@@ -1,4 +1,4 @@
-name: Deploy Frontend to Netlify
+name: Deploy Frontend to GitHub Pages
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "frontend/**"
-      - ".github/workflows/deploy-frontend-netlify.yml"
+      - ".github/workflows/deploy-frontend-pages.yml"
   workflow_run:
     workflows:
       - Deploy Backend to Cloud Run
@@ -14,12 +14,14 @@ on:
       - completed
   workflow_dispatch:
 
+# Only one Pages deployment may run at a time; let an in-flight deploy finish
+# rather than cancelling it halfway through publishing.
 concurrency:
-  group: netlify-frontend-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -100,10 +102,22 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Deploy to Netlify
-        uses: netlify/actions/cli@master
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          args: deploy --dir=frontend/dist --prod
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
